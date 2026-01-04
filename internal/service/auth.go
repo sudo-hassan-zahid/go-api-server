@@ -1,6 +1,7 @@
 package service
 
 import (
+	"github.com/google/uuid"
 	appErrors "github.com/sudo-hassan-zahid/go-api-server/internal/errors"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/models"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/repository"
@@ -14,9 +15,8 @@ type AuthService interface {
 }
 
 type authService struct {
-	repo     repository.AuthRepository
-	userRepo repository.UserRepository
-	db       *gorm.DB
+	repo repository.AuthRepository
+	db   *gorm.DB
 }
 
 func NewAuthService(repo repository.AuthRepository, db *gorm.DB) AuthService {
@@ -24,32 +24,47 @@ func NewAuthService(repo repository.AuthRepository, db *gorm.DB) AuthService {
 }
 
 func (s *authService) CreateUser(email, password, firstName, lastName string) (*models.User, error) {
-	var user *models.User
-	err := s.db.Transaction(func(tx *gorm.DB) error {
-		u := &models.User{
-			Email:     email,
-			Password:  password,
-			FirstName: firstName,
-			LastName:  lastName,
-		}
+	var exists bool
+	if err := s.db.Model(&models.User{}).Select("count(*) > 0").Where("email = ?", email).Find(&exists).Error; err != nil {
+		return nil, err
+	}
+	if exists {
+		return nil, appErrors.ErrEmailAlreadyExists
+	}
 
-		if err := tx.Create(u).Error; err != nil {
-			return err
-		}
+	hashed, err := utils.HashPassword(password)
+	if err != nil {
+		return nil, err
+	}
 
-		user = u
-		return nil
-	})
-	return user, err
+	user := &models.User{
+		ID:        uuid.New(),
+		Email:     email,
+		Password:  hashed,
+		FirstName: firstName,
+		LastName:  lastName,
+		Role:      "user",
+	}
+
+	if err := s.db.Create(user).Error; err != nil {
+		return nil, err
+	}
+
+	return user, nil
 }
 
 func (s *authService) LoginUser(email, password string) (*models.User, error) {
-	user, err := s.userRepo.GetByEmail(email)
-	if err != nil {
+	user := &models.User{}
+	if err := s.db.Where("email = ?", email).First(user).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, appErrors.ErrInvalidCredentials
+		}
+		return nil, err
+	}
+
+	if !utils.CheckPassword(user.Password, password) {
 		return nil, appErrors.ErrInvalidCredentials
 	}
-	if ok := utils.CheckPassword(user.Password, password); !ok {
-		return nil, appErrors.ErrInvalidCredentials
-	}
+
 	return user, nil
 }

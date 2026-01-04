@@ -7,6 +7,7 @@ import (
 	"github.com/sudo-hassan-zahid/go-api-server/internal/auth"
 	dto "github.com/sudo-hassan-zahid/go-api-server/internal/dto"
 	appErrors "github.com/sudo-hassan-zahid/go-api-server/internal/errors"
+	"github.com/sudo-hassan-zahid/go-api-server/internal/logger"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/service"
 	"github.com/sudo-hassan-zahid/go-api-server/utils"
 	"gorm.io/gorm"
@@ -35,21 +36,24 @@ func NewAuthHandler(s service.AuthService) *AuthHandler {
 func (h *AuthHandler) CreateUser(c *fiber.Ctx) error {
 	var req dto.CreateUserRequest
 	if err := c.BodyParser(&req); err != nil {
+		logger.Log.Error().Err(err).Msg("Failed to parse request body")
 		return appErrors.HandleError(c, appErrors.ErrBadRequest)
 	}
 
 	if ok := utils.ValidateStruct(c, &req); !ok {
+		logger.Log.Warn().Msg("Validation failed")
 		return nil
 	}
 
 	user, err := h.service.CreateUser(req.Email, req.Password, req.FirstName, req.LastName)
 	if err != nil {
+		logger.Log.Error().Err(err).Msg("Failed to create user")
 		if errors.Is(err, gorm.ErrDuplicatedKey) {
 			return appErrors.HandleError(c, appErrors.ErrEmailAlreadyExists)
 		}
 		return appErrors.HandleError(c, err)
 	}
-
+	logger.Log.Info().Msg("User created successfully")
 	return c.Status(fiber.StatusCreated).JSON(user)
 }
 
