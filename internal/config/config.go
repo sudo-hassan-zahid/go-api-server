@@ -42,7 +42,7 @@ func Load() (*Config, error) {
 	cfg := &Config{
 		App: AppConfig{
 			Name:        getEnv("APP_NAME", "go_api_server"),
-			Environment: getEnv("APP_ENV", "development"),
+			Environment: getEnv("APP_ENV", "local"),
 			Port:        getEnv("APP_PORT", "8080"),
 		},
 		DB: DBConfig{
