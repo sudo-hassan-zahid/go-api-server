@@ -222,6 +222,8 @@ paths:
             additionalProperties:
               type: string
             type: object
+      security:
+      - BearerAuth: []
       summary: Get user by ID
       tags:
       - Users

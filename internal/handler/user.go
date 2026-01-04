@@ -121,6 +121,7 @@ func (h *UserHandler) GetAllUsers(c *fiber.Ctx) error {
 // @Summary      Get user by ID
 // @Description  Returns a single user by their ID
 // @Tags         Users
+// @Security     BearerAuth
 // @Accept       json
 // @Produce      json
 // @Param        id path string true "User UUID"

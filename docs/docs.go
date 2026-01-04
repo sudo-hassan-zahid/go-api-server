@@ -203,6 +203,11 @@ const docTemplate = `{
         },
         "/users/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns a single user by their ID",
                 "consumes": [
                     "application/json"
