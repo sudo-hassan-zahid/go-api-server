@@ -3,6 +3,7 @@ definitions:
   dto.CreateUserRequest:
     properties:
       email:
+        example: user@example.com
         type: string
       first_name:
         type: string
@@ -59,9 +60,9 @@ paths:
     post:
       consumes:
       - application/json
-      description: Logins an existing user with email and password
+      description: Logins an existing user using email and password
       parameters:
-      - description: User info
+      - description: User credentials
         in: body
         name: user
         required: true
@@ -71,12 +72,24 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Login successful, returns user object
           schema:
             additionalProperties: true
             type: object
+        "400":
+          description: Bad request / validation error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
         "401":
-          description: Unauthorized
+          description: Invalid credentials
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
           schema:
             additionalProperties:
               type: string
@@ -88,7 +101,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Creates a user with email and password
+      description: Creates a new user with email, password, first name, and last name
       parameters:
       - description: User info
         in: body
@@ -100,11 +113,23 @@ paths:
       - application/json
       responses:
         "201":
-          description: Created
+          description: Created user
           schema:
             $ref: '#/definitions/models.User'
         "400":
-          description: Bad Request
+          description: Bad request / validation error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Email already exists
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
           schema:
             additionalProperties:
               type: string
@@ -132,20 +157,18 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get all existing users
+      description: Returns a list of all existing users
       produces:
       - application/json
       responses:
         "200":
-          description: OK
+          description: List of users
           schema:
             items:
-              items:
-                $ref: '#/definitions/models.User'
-              type: array
+              $ref: '#/definitions/models.User'
             type: array
         "500":
-          description: Internal Server Error
+          description: Internal server error
           schema:
             additionalProperties:
               type: string
@@ -157,33 +180,39 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get a user by their ID
+      description: Returns a single user by their ID
       parameters:
-      - description: User ID
+      - description: User UUID
         in: path
         name: id
         required: true
-        type: integer
+        type: string
       produces:
       - application/json
       responses:
         "200":
-          description: OK
+          description: User found
           schema:
             $ref: '#/definitions/models.User'
         "400":
-          description: Bad Request
+          description: Invalid ID
           schema:
             additionalProperties:
               type: string
             type: object
         "404":
-          description: Not Found
+          description: User not found
           schema:
             additionalProperties:
               type: string
             type: object
-      summary: Get a user by ID
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get user by ID
       tags:
       - Users
 swagger: "2.0"

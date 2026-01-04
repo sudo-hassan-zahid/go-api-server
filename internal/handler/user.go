@@ -20,16 +20,18 @@ func NewUserHandler(s service.UserService) *UserHandler {
 	return &UserHandler{service: s}
 }
 
-// CreateUser 		godoc
-// @Summary 		Create a new user
-// @Description 	Creates a user with email and password
-// @Tags 			Auth
-// @Accept 			json
-// @Produce 		json
-// @Param 			user body dto.CreateUserRequest true "User info"
-// @Success 		201 {object} models.User
-// @Failure 		400 {object} map[string]string
-// @Router 			/auth/signup [post]
+// CreateUser 	 godoc
+// @Summary      Create a new user
+// @Description  Creates a new user with email, password, first name, and last name
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        user body dto.CreateUserRequest true "User info"
+// @Success      201 {object} models.User "Created user"
+// @Failure      400 {object} map[string]string "Bad request / validation error"
+// @Failure      409 {object} map[string]string "Email already exists"
+// @Failure      500 {object} map[string]string "Internal server error"
+// @Router       /auth/signup [post]
 func (h *UserHandler) CreateUser(c *fiber.Ctx) error {
 	var req dto.CreateUserRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -51,16 +53,18 @@ func (h *UserHandler) CreateUser(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusCreated).JSON(user)
 }
 
-// LoginUser 		godoc
-// @Summary 		Login an existing user
-// @Description 	Logins an existing user with email and password
-// @Tags 			Auth
-// @Accept 			json
-// @Produce 		json
-// @Param 			user body dto.LoginUserRequest true "User info"
-// @Success 		200 {object} map[string]interface{}
-// @Failure 		401 {object} map[string]string
-// @Router 			/auth/login [post]
+// LoginUser 	 godoc
+// @Summary      Login an existing user
+// @Description  Logins an existing user using email and password
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        user body dto.LoginUserRequest true "User credentials"
+// @Success      200 {object} map[string]interface{} "Login successful, returns user object"
+// @Failure      400 {object} map[string]string "Bad request / validation error"
+// @Failure      401 {object} map[string]string "Invalid credentials"
+// @Failure      500 {object} map[string]string "Internal server error"
+// @Router       /auth/login [post]
 func (h *UserHandler) LoginUser(c *fiber.Ctx) error {
 	var req dto.LoginUserRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -79,15 +83,15 @@ func (h *UserHandler) LoginUser(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"message": "login successful", "user": user})
 }
 
-// GetAllUsers 		godoc
-// @Summary 		Get all users
-// @Description 	Get all existing users
-// @Tags 			Users
-// @Accept 			json
-// @Produce 		json
-// @Success 		200 {array} []models.User
-// @Failure 		500 {object} map[string]string
-// @Router 			/users [get]
+// GetAllUsers 	 godoc
+// @Summary      Get all users
+// @Description  Returns a list of all existing users
+// @Tags         Users
+// @Accept       json
+// @Produce      json
+// @Success      200 {array} models.User "List of users"
+// @Failure      500 {object} map[string]string "Internal server error"
+// @Router       /users [get]
 func (h *UserHandler) GetAllUsers(c *fiber.Ctx) error {
 	users, err := h.service.GetAllUsers()
 	if err != nil {
@@ -96,16 +100,18 @@ func (h *UserHandler) GetAllUsers(c *fiber.Ctx) error {
 	return c.JSON(users)
 }
 
-// @Summary 		Get a user by ID
-// @Description 	Get a user by their ID
-// @Tags 			Users
-// @Accept 			json
-// @Produce 		json
-// @Param 			id path uint true "User ID"
-// @Success 		200 {object} models.User
-// @Failure 		400 {object} map[string]string
-// @Failure 		404 {object} map[string]string
-// @Router 			/users/{id} [get]
+// GetUserByID 	 godoc
+// @Summary      Get user by ID
+// @Description  Returns a single user by their ID
+// @Tags         Users
+// @Accept       json
+// @Produce      json
+// @Param        id path string true "User UUID"
+// @Success      200 {object} models.User "User found"
+// @Failure      400 {object} map[string]string "Invalid ID"
+// @Failure      404 {object} map[string]string "User not found"
+// @Failure      500 {object} map[string]string "Internal server error"
+// @Router       /users/{id} [get]
 func (h *UserHandler) GetUserByID(c *fiber.Ctx) error {
 	idParam := c.Params("id")
 	id, err := strconv.ParseUint(idParam, 10, 32)
