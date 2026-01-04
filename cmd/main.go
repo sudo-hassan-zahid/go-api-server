@@ -22,12 +22,14 @@ import (
 	swagger "github.com/swaggo/fiber-swagger"
 )
 
-// @title            Go API Server
-// @version          1.0
-// @description      This API server is powered by Go
-// @contact.name     Hassan
-// @contact.email    hassanisavailable@gmail.com
-// @BasePath         /api
+// @title            				Go API Server
+// @version          				1.0
+// @description      				This API server is powered by Go
+// @BasePath         				/api
+// @securityDefinitions.apikey  	BearerAuth
+// @in 								header
+// @name 							Authorization
+// @description 					Type "Bearer" followed by your JWT token.
 func main() {
 	// Load config
 	cfg, err := config.Load()

@@ -29,6 +29,17 @@ definitions:
     - email
     - password
     type: object
+  dto.LoginUserResponse:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
+        type: string
+      user_id:
+        type: string
+      user_role:
+        type: string
+    type: object
   models.User:
     properties:
       created_at:
@@ -49,9 +60,7 @@ definitions:
         type: string
     type: object
 info:
-  contact:
-    email: hassanisavailable@gmail.com
-    name: Hassan
+  contact: {}
   description: This API server is powered by Go
   title: Go API Server
   version: "1.0"
@@ -74,8 +83,7 @@ paths:
         "200":
           description: Login successful, returns user object
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/dto.LoginUserResponse'
         "400":
           description: Bad request / validation error
           schema:
@@ -173,6 +181,8 @@ paths:
             additionalProperties:
               type: string
             type: object
+      security:
+      - BearerAuth: []
       summary: Get all users
       tags:
       - Users
@@ -215,4 +225,10 @@ paths:
       summary: Get user by ID
       tags:
       - Users
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by your JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

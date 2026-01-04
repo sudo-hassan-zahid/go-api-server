@@ -103,6 +103,7 @@ func (h *UserHandler) LoginUser(c *fiber.Ctx) error {
 // @Summary      Get all users
 // @Description  Returns a list of all existing users
 // @Tags         Users
+// @Security     BearerAuth
 // @Accept       json
 // @Produce      json
 // @Success      200 {array} models.User "List of users"
