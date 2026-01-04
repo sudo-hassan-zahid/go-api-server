@@ -23,7 +23,7 @@ import (
 
 // @title            Go API Server
 // @version          1.0
-// @description      This is a sample Go API server using Fiber and GORM.
+// @description      This API server is powered by Go
 // @contact.name     Hassan
 // @contact.email    hassanisavailable@gmail.com
 // @BasePath         /api

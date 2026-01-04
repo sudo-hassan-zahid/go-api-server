@@ -1,7 +1,7 @@
 {
     "swagger": "2.0",
     "info": {
-        "description": "This is a sample Go API server using Fiber and GORM.",
+        "description": "This API server is powered by Go",
         "title": "Go API Server",
         "contact": {
             "name": "Hassan",
