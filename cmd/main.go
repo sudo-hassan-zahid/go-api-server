@@ -18,6 +18,7 @@ import (
 	"github.com/sudo-hassan-zahid/go-api-server/internal/constants"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/database"
 	appLogger "github.com/sudo-hassan-zahid/go-api-server/internal/logger"
+	"github.com/sudo-hassan-zahid/go-api-server/internal/middleware"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/models"
 	"github.com/sudo-hassan-zahid/go-api-server/routes"
 	swagger "github.com/swaggo/fiber-swagger"
@@ -64,6 +65,7 @@ func main() {
 	// Middlewares
 	app.Use(logger.New())
 	app.Use(recover.New())
+	app.Use(middleware.ErrorLogger())
 
 	// Auth init
 	auth.Init(cfg)
