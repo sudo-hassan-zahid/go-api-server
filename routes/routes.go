@@ -2,6 +2,7 @@ package routes
 
 import (
 	"github.com/sudo-hassan-zahid/go-api-server/internal/handler"
+	"github.com/sudo-hassan-zahid/go-api-server/internal/middleware"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/repository"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/service"
 
@@ -18,6 +19,9 @@ func Setup(app *fiber.App, db *gorm.DB) {
 		AllowHeaders: "Origin, Content-Type, Accept, Authorization",
 	}))
 
+	// JWT auth
+	jwt := middleware.JWTMiddleware()
+
 	userRepo := repository.NewUserRepository(db)
 	userService := service.NewUserService(userRepo, db)
 	userHandler := handler.NewUserHandler(userService)
@@ -32,8 +36,8 @@ func Setup(app *fiber.App, db *gorm.DB) {
 
 	// User APIs
 	users := api.Group("/users")
-	users.Get("/", userHandler.GetAllUsers)
-	users.Get("/:id", userHandler.GetUserByID)
+	users.Get("/", jwt, userHandler.GetAllUsers)
+	users.Get("/:id", jwt, userHandler.GetUserByID)
 
 	// Public routes
 	publicHandler := handler.NewPublicHandler()
