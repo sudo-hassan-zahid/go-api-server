@@ -1,12 +1,15 @@
 package handler
 
 import (
+	"errors"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 	dto "github.com/sudo-hassan-zahid/go-api-server/internal/dto"
+	appErrors "github.com/sudo-hassan-zahid/go-api-server/internal/errors"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/service"
 	"github.com/sudo-hassan-zahid/go-api-server/utils"
+	"gorm.io/gorm"
 )
 
 type UserHandler struct {
@@ -30,7 +33,7 @@ func NewUserHandler(s service.UserService) *UserHandler {
 func (h *UserHandler) CreateUser(c *fiber.Ctx) error {
 	var req dto.CreateUserRequest
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+		return appErrors.HandleError(c, appErrors.ErrBadRequest)
 	}
 
 	if ok := utils.ValidateStruct(c, &req); !ok {
@@ -39,7 +42,10 @@ func (h *UserHandler) CreateUser(c *fiber.Ctx) error {
 
 	user, err := h.service.CreateUser(req.Email, req.Password, req.FirstName, req.LastName)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+		if errors.Is(err, gorm.ErrDuplicatedKey) {
+			return appErrors.HandleError(c, appErrors.ErrEmailAlreadyExists)
+		}
+		return appErrors.HandleError(c, err)
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(user)
@@ -58,16 +64,16 @@ func (h *UserHandler) CreateUser(c *fiber.Ctx) error {
 func (h *UserHandler) LoginUser(c *fiber.Ctx) error {
 	var req dto.LoginUserRequest
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+		return appErrors.HandleError(c, appErrors.ErrBadRequest)
 	}
 
-	if ok := utils.ValidateStruct(c, req); !ok {
+	if ok := utils.ValidateStruct(c, &req); !ok {
 		return nil
 	}
 
 	user, err := h.service.LoginUser(req.Email, req.Password)
 	if err != nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
+		return appErrors.HandleError(c, err) // <--- centralized handler
 	}
 
 	return c.JSON(fiber.Map{"message": "login successful", "user": user})
@@ -104,12 +110,12 @@ func (h *UserHandler) GetUserByID(c *fiber.Ctx) error {
 	idParam := c.Params("id")
 	id, err := strconv.ParseUint(idParam, 10, 32)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid id"})
+		return appErrors.HandleError(c, appErrors.ErrBadRequest)
 	}
 
 	user, err := h.service.GetUserByID(uint(id))
 	if err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user not found"})
+		return appErrors.HandleError(c, err)
 	}
 	return c.JSON(user)
 }

@@ -1,7 +1,7 @@
 package service
 
 import (
-	"errors"
+	appErrors "github.com/sudo-hassan-zahid/go-api-server/internal/errors"
 
 	"github.com/sudo-hassan-zahid/go-api-server/internal/models"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/repository"
@@ -48,10 +48,10 @@ func (s *userService) CreateUser(email, password, firstName, lastName string) (*
 func (s *userService) LoginUser(email, password string) (*models.User, error) {
 	user, err := s.repo.GetByEmail(email)
 	if err != nil {
-		return nil, errors.New("invalid credentials")
+		return nil, appErrors.ErrInvalidCredentials
 	}
 	if ok := utils.CheckPassword(user.Password, password); !ok {
-		return nil, errors.New("invalid credentials")
+		return nil, appErrors.ErrInvalidCredentials
 	}
 	return user, nil
 }
@@ -61,5 +61,9 @@ func (s *userService) GetAllUsers() ([]models.User, error) {
 }
 
 func (s *userService) GetUserByID(id uint) (*models.User, error) {
-	return s.repo.GetByID(id)
+	user, err := s.repo.GetByID(id)
+	if err != nil {
+		return nil, appErrors.ErrUserNotFound
+	}
+	return user, nil
 }
