@@ -5,7 +5,7 @@ import (
 
 	"github.com/sudo-hassan-zahid/go-api-server/internal/models"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/repository"
-	"golang.org/x/crypto/bcrypt"
+	"github.com/sudo-hassan-zahid/go-api-server/utils"
 	"gorm.io/gorm"
 )
 
@@ -50,7 +50,7 @@ func (s *userService) LoginUser(email, password string) (*models.User, error) {
 	if err != nil {
 		return nil, errors.New("invalid credentials")
 	}
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
+	if ok := utils.CheckPassword(user.Password, password); !ok {
 		return nil, errors.New("invalid credentials")
 	}
 	return user, nil

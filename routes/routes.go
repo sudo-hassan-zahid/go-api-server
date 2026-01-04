@@ -27,8 +27,8 @@ func Setup(app *fiber.App, db *gorm.DB) {
 
 	// Auth APIs
 	auth := api.Group("/auth")
-	auth.Post("/login", userHandler.LoginUser)
 	auth.Post("/signup", userHandler.CreateUser)
+	auth.Post("/login", userHandler.LoginUser)
 
 	// User APIs
 	users := api.Group("/users")

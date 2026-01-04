@@ -56,12 +56,13 @@ func (h *UserHandler) CreateUser(c *fiber.Ctx) error {
 // @Failure 		401 {object} map[string]string
 // @Router 			/auth/login [post]
 func (h *UserHandler) LoginUser(c *fiber.Ctx) error {
-	var req struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
-	}
+	var req dto.LoginUserRequest
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	if ok := utils.ValidateStruct(c, req); !ok {
+		return nil
 	}
 
 	user, err := h.service.LoginUser(req.Email, req.Password)
