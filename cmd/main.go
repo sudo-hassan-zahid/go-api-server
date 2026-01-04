@@ -15,6 +15,7 @@ import (
 	_ "github.com/sudo-hassan-zahid/go-api-server/docs"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/auth"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/config"
+	"github.com/sudo-hassan-zahid/go-api-server/internal/constants"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/database"
 	appLogger "github.com/sudo-hassan-zahid/go-api-server/internal/logger"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/models"
@@ -41,13 +42,13 @@ func main() {
 	appLogger.Init(cfg.Log, cfg.App.Environment)
 
 	// Connect to Database
-	db, err := database.Connect(cfg.DB, cfg.App.Environment == "local")
+	db, err := database.Connect(cfg.DB, cfg.App.Environment == constants.ENV_LOCAL)
 	if err != nil {
 		appLogger.Log.Fatal().Err(err).Msg("Failed to connect to database")
 	}
 
 	// Auto-migrate dev models
-	if cfg.App.Environment == "local" {
+	if cfg.App.Environment == constants.ENV_LOCAL {
 		if err := db.AutoMigrate(&models.User{}); err != nil {
 			log.Fatal("AutoMigrate failed:", err)
 		}
