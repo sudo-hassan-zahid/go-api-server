@@ -18,19 +18,24 @@ func Setup(app *fiber.App, db *gorm.DB) {
 		AllowHeaders: "Origin, Content-Type, Accept, Authorization",
 	}))
 
-	// Initialize layers
 	userRepo := repository.NewUserRepository(db)
 	userService := service.NewUserService(userRepo, db)
 	userHandler := handler.NewUserHandler(userService)
 
-	// Public routes
-	app.Get("/health", handler.HealthCheck)
+	// API group
 	api := app.Group("/api")
 
-	// User routes
-	api.Post("/users", userHandler.CreateUser)
-	api.Post("/users/login", userHandler.LoginUser)
-	api.Get("/users", userHandler.GetAllUsers)
-	api.Get("/users/:id", userHandler.GetUserByID)
+	// Auth APIs
+	auth := api.Group("/auth")
+	auth.Post("/login", userHandler.LoginUser)
+	auth.Post("/signup", userHandler.CreateUser)
 
+	// User APIs
+	users := api.Group("/users")
+	users.Get("/", userHandler.GetAllUsers)
+	users.Get("/:id", userHandler.GetUserByID)
+
+	// Public routes
+	publicHandler := handler.NewPublicHandler()
+	api.Get("/health", publicHandler.HealthCheck)
 }

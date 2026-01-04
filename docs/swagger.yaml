@@ -17,6 +17,17 @@ definitions:
     - last_name
     - password
     type: object
+  dto.LoginUserRequest:
+    properties:
+      email:
+        type: string
+      password:
+        minLength: 8
+        type: string
+    required:
+    - email
+    - password
+    type: object
   models.User:
     properties:
       created_at:
@@ -44,7 +55,36 @@ info:
   title: Go API Server
   version: "1.0"
 paths:
-  /users:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Logins an existing user with email and password
+      parameters:
+      - description: User info
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/dto.LoginUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Login an existing user
+      tags:
+      - Auth
+  /auth/signup:
     post:
       consumes:
       - application/json
@@ -70,6 +110,80 @@ paths:
               type: string
             type: object
       summary: Create a new user
+      tags:
+      - Auth
+  /health:
+    get:
+      consumes:
+      - application/json
+      description: Checks if the server is up and running
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Health check
+      tags:
+      - Health
+  /users:
+    get:
+      consumes:
+      - application/json
+      description: Get all existing users
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              items:
+                $ref: '#/definitions/models.User'
+              type: array
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get all users
+      tags:
+      - Users
+  /users/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get a user by their ID
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get a user by ID
       tags:
       - Users
 swagger: "2.0"
