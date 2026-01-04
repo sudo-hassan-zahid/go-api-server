@@ -56,8 +56,8 @@ func main() {
 	// Initialize Fiber App
 	app := fiber.New(fiber.Config{
 		AppName:      cfg.App.Name,
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 5 * time.Second,
+		ReadTimeout:  20 * time.Second,
+		WriteTimeout: 20 * time.Second,
 	})
 
 	// Middlewares
