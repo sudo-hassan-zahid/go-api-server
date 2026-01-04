@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"github.com/sudo-hassan-zahid/go-api-server/internal/auth"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/handler"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/repository"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/service"
@@ -10,7 +11,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func Setup(app *fiber.App, db *gorm.DB) {
+func Setup(app *fiber.App, db *gorm.DB, jwtAuth *auth.JWT) {
 	// CORS configuration
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: "*",

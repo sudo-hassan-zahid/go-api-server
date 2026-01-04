@@ -13,7 +13,9 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/recover"
 
 	_ "github.com/sudo-hassan-zahid/go-api-server/docs"
+	"github.com/sudo-hassan-zahid/go-api-server/internal/auth"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/config"
+	"github.com/sudo-hassan-zahid/go-api-server/internal/constants"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/database"
 	appLogger "github.com/sudo-hassan-zahid/go-api-server/internal/logger"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/models"
@@ -61,8 +63,11 @@ func main() {
 	app.Use(logger.New())
 	app.Use(recover.New())
 
+	// JWT auth
+	jwtAuth := auth.New(cfg.App.JWTSecret, constants.JWTExpiration)
+
 	// Routes
-	routes.Setup(app, db)
+	routes.Setup(app, db, jwtAuth)
 
 	// Swagger docs
 	app.Get("/swagger/*", swagger.FiberWrapHandler())

@@ -14,6 +14,7 @@ var (
 	ErrForbidden          = errors.New("forbidden")
 	ErrBadRequest         = errors.New("bad request")
 	ErrInternalServer     = errors.New("internal server error")
+	ErrTokenInvalid       = errors.New("invalid or expired token")
 )
 
 type AppError struct {

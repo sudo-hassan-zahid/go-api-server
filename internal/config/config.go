@@ -1,8 +1,8 @@
 package config
 
 import (
-	"fmt"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -12,6 +12,7 @@ type AppConfig struct {
 	Name        string
 	Environment string
 	Port        string
+	JWTSecret   []byte
 }
 
 type DBConfig struct {
@@ -44,11 +45,12 @@ func Load() (*Config, error) {
 			Name:        getEnv("APP_NAME", "go_api_server"),
 			Environment: getEnv("APP_ENVIRONMENT", "local"),
 			Port:        getEnv("APP_PORT", "8080"),
+			JWTSecret:   []byte(mustGetEnv("JWT_SECRET")),
 		},
 		DB: DBConfig{
 			Host:            getEnv("DB_HOST", "localhost"),
-			Port:            getEnv("DB_PORT", "5433"),
-			User:            getEnv("DB_USER", "root"),
+			Port:            getEnv("DB_PORT", "5432"),
+			User:            getEnv("DB_USER", "postgres"),
 			Password:        getEnv("DB_PASSWORD", ""),
 			Name:            getEnv("DB_NAME", "go_api_server"),
 			SSLMode:         getEnv("DB_SSLMODE", "disable"),
@@ -60,36 +62,42 @@ func Load() (*Config, error) {
 			Level: getEnv("LOG_LEVEL", "debug"),
 		},
 	}
+
 	return cfg, nil
 }
 
 func getEnv(key, defaultVal string) string {
-	if val, ok := os.LookupEnv(key); ok {
+	if val := os.Getenv(key); val != "" {
 		return val
 	}
 	return defaultVal
 }
 
+func mustGetEnv(key string) string {
+	if val := os.Getenv(key); val != "" {
+		return val
+	}
+	panic("missing required env: " + key)
+}
+
 func getEnvAsInt(key string, defaultVal int) int {
-	val := getEnv(key, "")
-	if val == "" {
-		return defaultVal
+	if val := os.Getenv(key); val != "" {
+		i, err := strconv.Atoi(val)
+		if err != nil {
+			panic("invalid int for " + key)
+		}
+		return i
 	}
-	var i int
-	if _, err := fmt.Sscan(val, &i); err != nil {
-		panic("invalid int for " + key)
-	}
-	return i
+	return defaultVal
 }
 
 func getEnvAsDuration(key string, defaultVal time.Duration) time.Duration {
-	val := getEnv(key, "")
-	if val == "" {
-		return defaultVal
+	if val := os.Getenv(key); val != "" {
+		d, err := time.ParseDuration(val)
+		if err != nil {
+			panic("invalid duration for " + key)
+		}
+		return d
 	}
-	d, err := time.ParseDuration(val)
-	if err != nil {
-		panic("invalid duration for " + key)
-	}
-	return d
+	return defaultVal
 }
