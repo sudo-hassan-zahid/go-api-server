@@ -15,7 +15,6 @@ import (
 	_ "github.com/sudo-hassan-zahid/go-api-server/docs"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/auth"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/config"
-	"github.com/sudo-hassan-zahid/go-api-server/internal/constants"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/database"
 	appLogger "github.com/sudo-hassan-zahid/go-api-server/internal/logger"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/models"
@@ -63,11 +62,11 @@ func main() {
 	app.Use(logger.New())
 	app.Use(recover.New())
 
-	// JWT auth
-	jwtAuth := auth.New(cfg.App.JWTSecret, constants.JWTExpiration)
+	// Auth init
+	auth.Init(cfg)
 
 	// Routes
-	routes.Setup(app, db, jwtAuth)
+	routes.Setup(app, db)
 
 	// Swagger docs
 	app.Get("/swagger/*", swagger.FiberWrapHandler())

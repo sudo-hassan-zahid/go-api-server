@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/sudo-hassan-zahid/go-api-server/internal/auth"
 	dto "github.com/sudo-hassan-zahid/go-api-server/internal/dto"
 	appErrors "github.com/sudo-hassan-zahid/go-api-server/internal/errors"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/service"
@@ -60,7 +61,7 @@ func (h *UserHandler) CreateUser(c *fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Param        user body dto.LoginUserRequest true "User credentials"
-// @Success      200 {object} map[string]interface{} "Login successful, returns user object"
+// @Success      200 {object} dto.LoginUserResponse "Login successful, returns user object"
 // @Failure      400 {object} map[string]string "Bad request / validation error"
 // @Failure      401 {object} map[string]string "Invalid credentials"
 // @Failure      500 {object} map[string]string "Internal server error"
@@ -77,10 +78,25 @@ func (h *UserHandler) LoginUser(c *fiber.Ctx) error {
 
 	user, err := h.service.LoginUser(req.Email, req.Password)
 	if err != nil {
-		return appErrors.HandleError(c, err) // <--- centralized handler
+		return appErrors.HandleError(c, err)
 	}
 
-	return c.JSON(fiber.Map{"message": "login successful", "user": user})
+	accessToken, err := auth.GenerateAccessToken(user.ID.String(), user.Role)
+	if err != nil {
+		return appErrors.HandleError(c, err)
+	}
+
+	refreshToken, err := auth.GenerateRefreshToken(user.ID.String())
+	if err != nil {
+		return appErrors.HandleError(c, err)
+	}
+
+	return c.Status(fiber.StatusOK).JSON(dto.LoginUserResponse{
+		UserID:       user.ID.String(),
+		UserRole:     user.Role,
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	})
 }
 
 // GetAllUsers 	 godoc

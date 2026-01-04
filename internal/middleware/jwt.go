@@ -8,7 +8,7 @@ import (
 	appErrors "github.com/sudo-hassan-zahid/go-api-server/internal/errors"
 )
 
-func JWT(jwtAuth *auth.JWT) fiber.Handler {
+func JWTMiddleware() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		authHeader := c.Get("Authorization")
 		if authHeader == "" {
@@ -20,9 +20,9 @@ func JWT(jwtAuth *auth.JWT) fiber.Handler {
 			return appErrors.HandleError(c, appErrors.ErrUnauthorized)
 		}
 
-		claims, err := jwtAuth.Validate(parts[1])
+		claims, err := auth.ValidateToken(parts[1])
 		if err != nil {
-			return appErrors.HandleError(c, err)
+			return appErrors.HandleError(c, appErrors.ErrUnauthorized)
 		}
 
 		c.Locals("userID", claims.UserID)
