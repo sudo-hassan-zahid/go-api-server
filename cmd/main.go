@@ -12,13 +12,22 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 
+	_ "github.com/sudo-hassan-zahid/go-api-server/docs"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/config"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/database"
 	appLogger "github.com/sudo-hassan-zahid/go-api-server/internal/logger"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/models"
 	"github.com/sudo-hassan-zahid/go-api-server/routes"
+	swagger "github.com/swaggo/fiber-swagger"
 )
 
+// @title            Go API Server
+// @version          1.0
+// @description      This is a sample Go API server using Fiber and GORM.
+// @contact.name     Hassan
+// @contact.email    hassanisavailable@gmail.com
+// @host             localhost:8080
+// @BasePath         /api
 func main() {
 	// Load config
 	cfg, err := config.Load()
@@ -55,6 +64,9 @@ func main() {
 
 	// Routes
 	routes.Setup(app, db)
+
+	// Swagger docs
+	app.Get("/swagger/*", swagger.FiberWrapHandler())
 
 	// Start Server in Goroutine
 	serverErrors := make(chan error, 1)

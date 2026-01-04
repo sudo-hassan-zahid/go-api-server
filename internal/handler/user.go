@@ -15,6 +15,16 @@ func NewUserHandler(s service.UserService) *UserHandler {
 	return &UserHandler{service: s}
 }
 
+// CreateUser godoc
+// @Summary Create a new user
+// @Description Creates a user with email and password
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param user body models.User true "User info"
+// @Success 201 {object} models.User
+// @Failure 400 {object} map[string]string
+// @Router /users [post]
 func (h *UserHandler) CreateUser(c *fiber.Ctx) error {
 	var req struct {
 		Email    string `json:"email"`

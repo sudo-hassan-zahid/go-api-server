@@ -25,6 +25,4 @@ func Setup(app *fiber.App, db *gorm.DB) {
 	api.Get("/users", userHandler.GetAllUsers)
 	api.Get("/users/:id", userHandler.GetUserByID)
 
-	// Catch all 404
-	app.All("*", handler.NoAPI)
 }
