@@ -64,12 +64,17 @@ func IsValidEmail(email string) bool {
 	return re.MatchString(strings.ToLower(email))
 }
 
-// ------------------------ Misc ------------------------
-
 // DefaultString returns the default if the string is empty
 func DefaultString(s, def string) string {
 	if IsEmpty(s) {
 		return def
 	}
 	return s
+}
+
+func SafeString(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
 }
