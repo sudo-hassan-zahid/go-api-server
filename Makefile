@@ -19,3 +19,7 @@ build:
 .PHONY: run
 run:
 	swag init -g ./cmd/main.go && go run ./cmd/main.go
+
+.PHONY: swagger
+swagger:
+	swag init -g ./cmd/main.go
