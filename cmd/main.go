@@ -26,7 +26,6 @@ import (
 // @description      This is a sample Go API server using Fiber and GORM.
 // @contact.name     Hassan
 // @contact.email    hassanisavailable@gmail.com
-// @host             localhost:8080
 // @BasePath         /api
 func main() {
 	// Load config
