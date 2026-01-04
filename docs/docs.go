@@ -372,7 +372,7 @@ var SwaggerInfo = &swag.Spec{
 	BasePath:         "/api",
 	Schemes:          []string{},
 	Title:            "Go API Server",
-	Description:      "This API server is powered by Go",
+	Description:      "This API server is powered by Go. Using PostgreSQL for DB with a magical touch of GORM",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

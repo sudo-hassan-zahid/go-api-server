@@ -1,7 +1,7 @@
 {
     "swagger": "2.0",
     "info": {
-        "description": "This API server is powered by Go",
+        "description": "This API server is powered by Go. Using PostgreSQL for DB with a magical touch of GORM",
         "title": "Go API Server",
         "contact": {},
         "version": "1.0"

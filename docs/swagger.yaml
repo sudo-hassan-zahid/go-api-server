@@ -61,7 +61,8 @@ definitions:
     type: object
 info:
   contact: {}
-  description: This API server is powered by Go
+  description: This API server is powered by Go. Using PostgreSQL for DB with a magical
+    touch of GORM
   title: Go API Server
   version: "1.0"
 paths:

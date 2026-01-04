@@ -24,7 +24,7 @@ import (
 
 // @title            				Go API Server
 // @version          				1.0
-// @description      				This API server is powered by Go
+// @description      				This API server is powered by Go. Using PostgreSQL for DB with a magical touch of GORM
 // @BasePath         				/api
 // @securityDefinitions.apikey  	BearerAuth
 // @in 								header
