@@ -47,3 +47,29 @@ func SanitizeString(s string) string {
 		return r
 	}, s)
 }
+
+// IsAlphaNumeric checks if a string contains only letters and numbers
+func IsAlphaNumeric(s string) bool {
+	for _, r := range s {
+		if !unicode.IsLetter(r) && !unicode.IsNumber(r) {
+			return false
+		}
+	}
+	return true
+}
+
+// IsValidEmail rudimentary email check
+func IsValidEmail(email string) bool {
+	re := regexp.MustCompile(`^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}$`)
+	return re.MatchString(strings.ToLower(email))
+}
+
+// ------------------------ Misc ------------------------
+
+// DefaultString returns the default if the string is empty
+func DefaultString(s, def string) string {
+	if IsEmpty(s) {
+		return def
+	}
+	return s
+}
