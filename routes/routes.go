@@ -22,19 +22,21 @@ func Setup(app *fiber.App, db *gorm.DB) {
 	// JWT auth
 	jwt := middleware.JWTMiddleware()
 
-	userRepo := repository.NewUserRepository(db)
-	userService := service.NewUserService(userRepo, db)
-	userHandler := handler.NewUserHandler(userService)
-
 	// API group
 	api := app.Group("/api")
 
 	// Auth APIs
+	authRepo := repository.NewAuthRepository(db)
+	authService := service.NewAuthService(authRepo, db)
+	authHandler := handler.NewAuthHandler(authService)
 	auth := api.Group("/auth")
-	auth.Post("/signup", userHandler.CreateUser)
-	auth.Post("/login", userHandler.LoginUser)
+	auth.Post("/signup", authHandler.CreateUser)
+	auth.Post("/login", authHandler.LoginUser)
 
 	// User APIs
+	userRepo := repository.NewUserRepository(db)
+	userService := service.NewUserService(userRepo, db)
+	userHandler := handler.NewUserHandler(userService)
 	users := api.Group("/users")
 	users.Get("/", jwt, userHandler.GetAllUsers)
 	users.Get("/:id", jwt, userHandler.GetUserByID)

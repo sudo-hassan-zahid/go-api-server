@@ -5,13 +5,10 @@ import (
 
 	"github.com/sudo-hassan-zahid/go-api-server/internal/models"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/repository"
-	"github.com/sudo-hassan-zahid/go-api-server/utils"
 	"gorm.io/gorm"
 )
 
 type UserService interface {
-	CreateUser(email, password, firstName, lastName string) (*models.User, error)
-	LoginUser(email, password string) (*models.User, error)
 	GetAllUsers() ([]models.User, error)
 	GetUserByID(id uint) (*models.User, error)
 }
@@ -23,37 +20,6 @@ type userService struct {
 
 func NewUserService(repo repository.UserRepository, db *gorm.DB) UserService {
 	return &userService{repo: repo, db: db}
-}
-
-func (s *userService) CreateUser(email, password, firstName, lastName string) (*models.User, error) {
-	var user *models.User
-	err := s.db.Transaction(func(tx *gorm.DB) error {
-		u := &models.User{
-			Email:     email,
-			Password:  password,
-			FirstName: firstName,
-			LastName:  lastName,
-		}
-
-		if err := tx.Create(u).Error; err != nil {
-			return err
-		}
-
-		user = u
-		return nil
-	})
-	return user, err
-}
-
-func (s *userService) LoginUser(email, password string) (*models.User, error) {
-	user, err := s.repo.GetByEmail(email)
-	if err != nil {
-		return nil, appErrors.ErrInvalidCredentials
-	}
-	if ok := utils.CheckPassword(user.Password, password); !ok {
-		return nil, appErrors.ErrInvalidCredentials
-	}
-	return user, nil
 }
 
 func (s *userService) GetAllUsers() ([]models.User, error) {
