@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"log"
+	"database/sql"
 	"os"
 	"os/signal"
 	"syscall"
@@ -23,34 +23,40 @@ import (
 	swagger "github.com/swaggo/fiber-swagger"
 )
 
-// @title            				Go API Server
-// @version          				1.0
-// @description      				This API server is powered by Go. Using PostgreSQL for DB with a magical touch of GORM
-// @BasePath         				/api
-// @securityDefinitions.apikey  	BearerAuth
+// @title             				Go API Server
+// @version           				1.0
+// @description       				This API server is powered by Go. Using PostgreSQL for DB with a magical touch of GORM
+// @BasePath          				/api
+// @securityDefinitions.apikey		BearerAuth
 // @in 								header
 // @name 							Authorization
 // @description 					Type "Bearer" followed by your JWT token.
 func main() {
-	// Load config
+	if err := run(); err != nil {
+		appLogger.Log.Fatal().Err(err).Msg("Application crashed")
+	}
+}
+
+func run() error {
+	// Load Config
 	cfg, err := config.Load()
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	// Initialize Logger
 	appLogger.Init(cfg.Log, cfg.App.Environment)
 
-	// Connect to Database
-	db, err := database.Connect(cfg.DB, cfg.App.Environment == constants.ENV_LOCAL)
+	// Initialize Database
+	db, err := database.Connect(cfg.DB, cfg.App.Environment == constants.ENV_DEVELOPMENT)
 	if err != nil {
-		appLogger.Log.Fatal().Err(err).Msg("Failed to connect to database")
+		return err
 	}
 
-	// Auto-migrate dev models
-	if cfg.App.Environment == constants.ENV_LOCAL {
+	// Initialize Database
+	if cfg.App.Environment == constants.ENV_DEVELOPMENT {
 		if err := db.AutoMigrate(&models.User{}); err != nil {
-			log.Fatal("AutoMigrate failed:", err)
+			return err
 		}
 	}
 
@@ -58,22 +64,26 @@ func main() {
 	app := handler.NewApp()
 
 	// Middlewares
-	app.Use(logger.New())
 	app.Use(recover.New())
+	app.Use(logger.New())
 
-	// Auth init
+	// Initialize auth
 	auth.Init(cfg)
 
-	// Routes
+	// Route setup
 	routes.Setup(app, db)
 
-	// Swagger docs
+	// Swagger
 	app.Get("/swagger/*", swagger.FiberWrapHandler())
 
-	// Start Server in Goroutine
+	// Server errors
 	serverErrors := make(chan error, 1)
+
 	go func() {
-		appLogger.Log.Info().Str("port", cfg.App.Port).Msg("Starting Fiber server")
+		appLogger.Log.Info().
+			Str("port", cfg.App.Port).
+			Msg("Starting server")
+
 		serverErrors <- app.Listen(":" + cfg.App.Port)
 	}()
 
@@ -83,26 +93,36 @@ func main() {
 
 	select {
 	case sig := <-quit:
-		appLogger.Log.Info().Str("signal", sig.String()).Msg("Shutting down server...")
+		appLogger.Log.Info().
+			Str("signal", sig.String()).
+			Msg("Shutdown signal received")
+
 	case err := <-serverErrors:
-		appLogger.Log.Fatal().Err(err).Msg("Server failed")
+		return err
 	}
 
-	// Fiber shutdown with timeout context
-	_, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	// Shutdown with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	if err := app.Shutdown(); err != nil {
-		appLogger.Log.Error().Err(err).Msg("Error during server shutdown")
-	} else {
-		appLogger.Log.Info().Msg("Server gracefully stopped")
+	if err := app.ShutdownWithContext(ctx); err != nil {
+		appLogger.Log.Error().Err(err).Msg("Server shutdown error")
 	}
 
-	// Close DB connection
-	sqlDB, _ := db.DB()
-	if err := sqlDB.Close(); err != nil {
-		appLogger.Log.Error().Err(err).Msg("Failed to close database connection")
-	} else {
-		appLogger.Log.Info().Msg("Database connection closed")
+	// Close Database
+	if err := closeDatabase(db); err != nil {
+		appLogger.Log.Error().Err(err).Msg("Failed to close DB")
 	}
+
+	appLogger.Log.Info().Msg("Server gracefully stopped")
+
+	return nil
+}
+
+func closeDatabase(dbConn interface{ DB() (*sql.DB, error) }) error {
+	sqlDB, err := dbConn.DB()
+	if err != nil {
+		return err
+	}
+	return sqlDB.Close()
 }
