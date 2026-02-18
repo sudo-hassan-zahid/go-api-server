@@ -2,6 +2,7 @@ package service
 
 import (
 	"github.com/sudo-hassan-zahid/go-api-server/internal/domain"
+	"github.com/sudo-hassan-zahid/go-api-server/internal/dto"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/models"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/repository"
 	"gorm.io/gorm"
@@ -10,6 +11,7 @@ import (
 type UserService interface {
 	GetAllUsers() ([]models.User, error)
 	GetUserByID(id uint) (*models.User, error)
+	UpdateUser(id uint, req dto.UpdateUserRequest) error
 }
 
 type userService struct {
@@ -31,4 +33,12 @@ func (s *userService) GetUserByID(id uint) (*models.User, error) {
 		return nil, domain.ErrUserNotFound
 	}
 	return user, nil
+}
+
+func (s *userService) UpdateUser(id uint, req dto.UpdateUserRequest) error {
+	err := s.repo.UpdateUser(id, req)
+	if err != nil {
+		return err
+	}
+	return nil
 }

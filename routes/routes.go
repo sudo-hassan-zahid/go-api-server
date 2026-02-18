@@ -40,6 +40,8 @@ func Setup(app *fiber.App, db *gorm.DB) {
 	users := api.Group("/users")
 	users.Get("/", jwt, userHandler.GetAllUsers)
 	users.Get("/:id", jwt, userHandler.GetUserByID)
+	users.Patch("/:id", jwt, userHandler.UpdateUser)
+	users.Delete("/:id", jwt, userHandler.DeleteUser)
 
 	// Public routes
 	publicHandler := handler.NewPublicHandler(db)
