@@ -42,6 +42,7 @@ func Setup(app *fiber.App, db *gorm.DB) {
 	users.Get("/:id", jwt, userHandler.GetUserByID)
 
 	// Public routes
-	publicHandler := handler.NewPublicHandler()
-	api.Get("/health", publicHandler.HealthCheck)
+	publicHandler := handler.NewPublicHandler(db)
+	api.Get("/health/server", publicHandler.HealthCheckServer)
+	api.Get("/health/db", publicHandler.HealthCheckDB)
 }

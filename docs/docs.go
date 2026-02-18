@@ -137,7 +137,38 @@ const docTemplate = `{
                 }
             }
         },
-        "/health": {
+        "/health/db": {
+            "get": {
+                "description": "Checks if the database is up and running",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Health"
+                ],
+                "summary": "Health check database",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/health/server": {
             "get": {
                 "description": "Checks if the server is up and running",
                 "consumes": [
@@ -149,7 +180,7 @@ const docTemplate = `{
                 "tags": [
                     "Health"
                 ],
-                "summary": "Health check",
+                "summary": "Health check server",
                 "responses": {
                     "200": {
                         "description": "OK",

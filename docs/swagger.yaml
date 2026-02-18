@@ -146,7 +146,28 @@ paths:
       summary: Create a new user
       tags:
       - Auth
-  /health:
+  /health/db:
+    get:
+      consumes:
+      - application/json
+      description: Checks if the database is up and running
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "503":
+          description: Service Unavailable
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Health check database
+      tags:
+      - Health
+  /health/server:
     get:
       consumes:
       - application/json
@@ -159,7 +180,7 @@ paths:
           schema:
             additionalProperties: true
             type: object
-      summary: Health check
+      summary: Health check server
       tags:
       - Health
   /users:
