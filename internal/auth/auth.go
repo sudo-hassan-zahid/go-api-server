@@ -5,7 +5,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/config"
-	"github.com/sudo-hassan-zahid/go-api-server/internal/domain"
+	customErr "github.com/sudo-hassan-zahid/go-api-server/internal/errors"
 )
 
 const (
@@ -39,18 +39,18 @@ func GenerateRefreshToken(userID, role string) (string, error) {
 func ValidateToken(tokenString string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, domain.ErrTokenInvalid
+			return nil, customErr.ErrTokenInvalid
 		}
 		return jwtSecret, nil
 	})
 
 	if err != nil || !token.Valid {
-		return nil, domain.ErrTokenInvalid
+		return nil, customErr.ErrTokenInvalid
 	}
 
 	claims, ok := token.Claims.(*Claims)
 	if !ok {
-		return nil, domain.ErrTokenInvalid
+		return nil, customErr.ErrTokenInvalid
 	}
 
 	return claims, nil

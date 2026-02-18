@@ -6,10 +6,13 @@ definitions:
         example: user@example.com
         type: string
       first_name:
+        example: John
         type: string
       last_name:
+        example: Doe
         type: string
       password:
+        example: password123
         minLength: 8
         type: string
     required:
@@ -21,8 +24,10 @@ definitions:
   dto.LoginUserRequest:
     properties:
       email:
+        example: user@example.com
         type: string
       password:
+        example: password123
         minLength: 8
         type: string
     required:
@@ -53,9 +58,6 @@ definitions:
       first_name:
         type: string
       last_name:
-        type: string
-      password:
-        minLength: 8
         type: string
       role:
         enum:

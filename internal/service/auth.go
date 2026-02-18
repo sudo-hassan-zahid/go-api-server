@@ -3,7 +3,7 @@ package service
 import (
 	"strings"
 
-	"github.com/sudo-hassan-zahid/go-api-server/internal/domain"
+	customErr "github.com/sudo-hassan-zahid/go-api-server/internal/errors"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/models"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/repository"
 	"github.com/sudo-hassan-zahid/go-api-server/utils"
@@ -36,7 +36,7 @@ func (s *authService) CreateUser(email, password, firstName, lastName string) (*
 
 	if err := s.db.Create(user).Error; err != nil {
 		if strings.Contains(err.Error(), "duplicate") {
-			return nil, domain.ErrUserAlreadyExists
+			return nil, customErr.ErrUserAlreadyExists
 		}
 		return nil, err
 	}
@@ -48,13 +48,13 @@ func (s *authService) LoginUser(email, password string) (*models.User, error) {
 	user := &models.User{}
 	if err := s.db.Where("email = ?", email).First(user).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return nil, domain.ErrInvalidCredentials
+			return nil, customErr.ErrInvalidCredentials
 		}
 		return nil, err
 	}
 
 	if !utils.CheckPassword(user.Password, password) {
-		return nil, domain.ErrInvalidCredentials
+		return nil, customErr.ErrInvalidCredentials
 	}
 
 	return user, nil

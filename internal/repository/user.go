@@ -2,12 +2,11 @@ package repository
 
 import (
 	"errors"
-	"strings"
 
 	"github.com/google/uuid"
-	"github.com/sudo-hassan-zahid/go-api-server/internal/database"
-	"github.com/sudo-hassan-zahid/go-api-server/internal/domain"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/dto"
+	customErr "github.com/sudo-hassan-zahid/go-api-server/internal/errors"
+	customerrors "github.com/sudo-hassan-zahid/go-api-server/internal/errors"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/models"
 	"gorm.io/gorm"
 )
@@ -30,17 +29,8 @@ func NewUserRepository(db *gorm.DB) UserRepository {
 
 func (r *userRepo) Create(user *models.User) error {
 	if err := r.db.Create(user).Error; err != nil {
-		if database.IsUniqueViolation(err) {
-			return domain.ErrUserAlreadyExists
-		}
-		if database.IsNotNullViolation(err) {
-			return domain.ErrNotNullViolation
-		}
-		if database.IsForeignKeyViolation(err) {
-			return domain.ErrForeignKeyViolation
-		}
-		if database.IsCheckViolation(err) {
-			return domain.ErrCheckViolation
+		if errors.Is(err, gorm.ErrDuplicatedKey) {
+			return customErr.ErrUserAlreadyExists
 		}
 		return err
 	}
@@ -50,8 +40,8 @@ func (r *userRepo) Create(user *models.User) error {
 func (r *userRepo) GetByEmail(email string) (*models.User, error) {
 	var user models.User
 	if err := r.db.Where("email = ?", email).First(&user).Error; err != nil {
-		if database.IsRecordNotFound(err) {
-			return nil, domain.ErrUserNotFound
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, customErr.ErrUserNotFound
 		}
 		return nil, err
 	}
@@ -61,8 +51,8 @@ func (r *userRepo) GetByEmail(email string) (*models.User, error) {
 func (r *userRepo) GetByID(id uuid.UUID) (*models.User, error) {
 	var user models.User
 	if err := r.db.First(&user, "id = ?", id).Error; err != nil {
-		if database.IsRecordNotFound(err) {
-			return nil, domain.ErrUserNotFound
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, customErr.ErrUserNotFound
 		}
 		return nil, err
 	}
@@ -79,20 +69,15 @@ func (r *userRepo) GetAll() ([]models.User, error) {
 
 func (r *userRepo) UpdateUser(id uuid.UUID, req dto.UpdateUserRequest) error {
 	var user models.User
+
 	if err := r.db.First(&user, "id = ?", id).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return domain.ErrUserNotFound
-		}
-		return err
+		return customerrors.ParseDatabaseError(err)
 	}
 
 	updates := make(map[string]interface{})
 
 	if req.Email != "" {
 		updates["email"] = req.Email
-	}
-	if req.Password != "" {
-		updates["password"] = req.Password
 	}
 	if req.FirstName != "" {
 		updates["first_name"] = req.FirstName
@@ -106,23 +91,7 @@ func (r *userRepo) UpdateUser(id uuid.UUID, req dto.UpdateUserRequest) error {
 
 	if len(updates) > 0 {
 		if err := r.db.Model(&user).Updates(updates).Error; err != nil {
-			if database.IsUniqueViolation(err) {
-				constraint := database.GetConstraintName(err)
-				if constraint == "idx_users_email" || strings.Contains(constraint, "email") {
-					return domain.ErrUserAlreadyExists
-				}
-				return domain.ErrUserAlreadyExists
-			}
-			if database.IsNotNullViolation(err) {
-				return domain.ErrNotNullViolation
-			}
-			if database.IsForeignKeyViolation(err) {
-				return domain.ErrForeignKeyViolation
-			}
-			if database.IsCheckViolation(err) {
-				return domain.ErrCheckViolation
-			}
-			return err
+			return customerrors.ParseDatabaseError(err)
 		}
 	}
 

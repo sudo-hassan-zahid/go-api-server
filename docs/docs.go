@@ -448,14 +448,17 @@ const docTemplate = `{
                     "example": "user@example.com"
                 },
                 "first_name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "John"
                 },
                 "last_name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Doe"
                 },
                 "password": {
                     "type": "string",
-                    "minLength": 8
+                    "minLength": 8,
+                    "example": "password123"
                 }
             }
         },
@@ -467,11 +470,13 @@ const docTemplate = `{
             ],
             "properties": {
                 "email": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "user@example.com"
                 },
                 "password": {
                     "type": "string",
-                    "minLength": 8
+                    "minLength": 8,
+                    "example": "password123"
                 }
             }
         },
@@ -512,10 +517,6 @@ const docTemplate = `{
                 },
                 "last_name": {
                     "type": "string"
-                },
-                "password": {
-                    "type": "string",
-                    "minLength": 8
                 },
                 "role": {
                     "type": "string",

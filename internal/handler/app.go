@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/sudo-hassan-zahid/go-api-server/internal/domain"
+	customerrors "github.com/sudo-hassan-zahid/go-api-server/internal/errors"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/logger"
 )
 
@@ -17,42 +17,15 @@ func NewApp() *fiber.App {
 		BodyLimit:    50 * 1024 * 1024,
 		ErrorHandler: func(ctx *fiber.Ctx, err error) error {
 			logger.Log.Error().Err(err).Msg("Failed to handle request")
-
-			message := err.Error()
-
-			var code int
+			errorHandler := customerrors.NewErrorHandler()
+			statusCode, errorResponse := errorHandler.Handle(err)
 			var ferr *fiber.Error
-
 			if errors.As(err, &ferr) {
-				code = ferr.Code
-			} else {
-				switch {
-				case errors.Is(err, domain.ErrUserNotFound):
-					code = fiber.StatusNotFound
-				case errors.Is(err, domain.ErrUserAlreadyExists):
-					code = fiber.StatusConflict
-				case errors.Is(err, domain.ErrForeignKeyViolation):
-					code = fiber.StatusBadRequest
-				case errors.Is(err, domain.ErrNotNullViolation):
-					code = fiber.StatusBadRequest
-				case errors.Is(err, domain.ErrCheckViolation):
-					code = fiber.StatusBadRequest
-				case errors.Is(err, domain.ErrInvalidCredentials):
-					code = fiber.StatusUnauthorized
-				case errors.Is(err, domain.ErrUnauthorized):
-					code = fiber.StatusUnauthorized
-				case errors.Is(err, domain.ErrTokenInvalid):
-					code = fiber.StatusUnauthorized
-				default:
-					code = fiber.StatusInternalServerError
-					message = "internal server error"
-				}
+				statusCode = ferr.Code
+				errorResponse.Error = ferr.Message
 			}
 
-			return ctx.Status(code).JSON(fiber.Map{
-				"success": false,
-				"error":   message,
-			})
+			return ctx.Status(statusCode).JSON(errorResponse)
 		},
 	})
 }
