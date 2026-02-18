@@ -1,7 +1,8 @@
 package service
 
 import (
-	"github.com/google/uuid"
+	"strings"
+
 	"github.com/sudo-hassan-zahid/go-api-server/internal/domain"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/models"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/repository"
@@ -24,29 +25,19 @@ func NewAuthService(repo repository.AuthRepository, db *gorm.DB) AuthService {
 }
 
 func (s *authService) CreateUser(email, password, firstName, lastName string) (*models.User, error) {
-	var exists bool
-	if err := s.db.Model(&models.User{}).Select("count(*) > 0").Where("email = ?", email).Find(&exists).Error; err != nil {
-		return nil, err
-	}
-	if exists {
-		return nil, domain.ErrUserAlreadyExists
-	}
-
-	hashed, err := utils.HashPassword(password)
-	if err != nil {
-		return nil, err
-	}
 
 	user := &models.User{
-		ID:        uuid.New(),
 		Email:     email,
-		Password:  hashed,
+		Password:  password,
 		FirstName: firstName,
 		LastName:  lastName,
 		Role:      "user",
 	}
 
 	if err := s.db.Create(user).Error; err != nil {
+		if strings.Contains(err.Error(), "duplicate") {
+			return nil, domain.ErrUserAlreadyExists
+		}
 		return nil, err
 	}
 
