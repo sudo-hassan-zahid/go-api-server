@@ -4,7 +4,6 @@ import (
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
-	appErrors "github.com/sudo-hassan-zahid/go-api-server/internal/errors"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/service"
 )
 
@@ -29,7 +28,7 @@ func NewUserHandler(s service.UserService) *UserHandler {
 func (h *UserHandler) GetAllUsers(c *fiber.Ctx) error {
 	users, err := h.service.GetAllUsers()
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+		return err
 	}
 	return c.JSON(users)
 }
@@ -51,12 +50,12 @@ func (h *UserHandler) GetUserByID(c *fiber.Ctx) error {
 	idParam := c.Params("id")
 	id, err := strconv.ParseUint(idParam, 10, 32)
 	if err != nil {
-		return appErrors.HandleError(c, appErrors.ErrBadRequest)
+		return err
 	}
 
 	user, err := h.service.GetUserByID(uint(id))
 	if err != nil {
-		return appErrors.HandleError(c, err)
+		return err
 	}
 	return c.JSON(user)
 }

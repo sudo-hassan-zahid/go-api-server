@@ -1,6 +1,9 @@
 package repository
 
 import (
+	"errors"
+
+	"github.com/sudo-hassan-zahid/go-api-server/internal/domain"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/models"
 	"gorm.io/gorm"
 )
@@ -21,12 +24,21 @@ func NewUserRepository(db *gorm.DB) UserRepository {
 }
 
 func (r *userRepo) Create(user *models.User) error {
-	return r.db.Create(user).Error
+	if err := r.db.Create(user).Error; err != nil {
+		if errors.Is(err, gorm.ErrDuplicatedKey) {
+			return domain.ErrUserAlreadyExists
+		}
+		return err
+	}
+	return nil
 }
 
 func (r *userRepo) GetByEmail(email string) (*models.User, error) {
 	var user models.User
 	if err := r.db.Where("email = ?", email).First(&user).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, domain.ErrUserNotFound
+		}
 		return nil, err
 	}
 	return &user, nil
@@ -35,6 +47,9 @@ func (r *userRepo) GetByEmail(email string) (*models.User, error) {
 func (r *userRepo) GetByID(id uint) (*models.User, error) {
 	var user models.User
 	if err := r.db.First(&user, id).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, domain.ErrUserNotFound
+		}
 		return nil, err
 	}
 	return &user, nil

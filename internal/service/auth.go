@@ -2,7 +2,7 @@ package service
 
 import (
 	"github.com/google/uuid"
-	appErrors "github.com/sudo-hassan-zahid/go-api-server/internal/errors"
+	"github.com/sudo-hassan-zahid/go-api-server/internal/domain"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/models"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/repository"
 	"github.com/sudo-hassan-zahid/go-api-server/utils"
@@ -29,7 +29,7 @@ func (s *authService) CreateUser(email, password, firstName, lastName string) (*
 		return nil, err
 	}
 	if exists {
-		return nil, appErrors.ErrEmailAlreadyExists
+		return nil, domain.ErrUserAlreadyExists
 	}
 
 	hashed, err := utils.HashPassword(password)
@@ -57,13 +57,13 @@ func (s *authService) LoginUser(email, password string) (*models.User, error) {
 	user := &models.User{}
 	if err := s.db.Where("email = ?", email).First(user).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return nil, appErrors.ErrInvalidCredentials
+			return nil, domain.ErrInvalidCredentials
 		}
 		return nil, err
 	}
 
 	if !utils.CheckPassword(user.Password, password) {
-		return nil, appErrors.ErrInvalidCredentials
+		return nil, domain.ErrInvalidCredentials
 	}
 
 	return user, nil

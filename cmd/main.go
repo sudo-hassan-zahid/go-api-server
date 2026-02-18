@@ -8,7 +8,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 
@@ -17,8 +16,8 @@ import (
 	"github.com/sudo-hassan-zahid/go-api-server/internal/config"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/constants"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/database"
+	"github.com/sudo-hassan-zahid/go-api-server/internal/handler"
 	appLogger "github.com/sudo-hassan-zahid/go-api-server/internal/logger"
-	"github.com/sudo-hassan-zahid/go-api-server/internal/middleware"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/models"
 	"github.com/sudo-hassan-zahid/go-api-server/routes"
 	swagger "github.com/swaggo/fiber-swagger"
@@ -56,16 +55,11 @@ func main() {
 	}
 
 	// Initialize Fiber App
-	app := fiber.New(fiber.Config{
-		AppName:      cfg.App.Name,
-		ReadTimeout:  20 * time.Second,
-		WriteTimeout: 20 * time.Second,
-	})
+	app := handler.NewApp()
 
 	// Middlewares
 	app.Use(logger.New())
 	app.Use(recover.New())
-	app.Use(middleware.ErrorLogger())
 
 	// Auth init
 	auth.Init(cfg)

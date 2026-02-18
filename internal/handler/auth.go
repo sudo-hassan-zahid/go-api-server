@@ -1,16 +1,12 @@
 package handler
 
 import (
-	"errors"
-
 	"github.com/gofiber/fiber/v2"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/auth"
-	dto "github.com/sudo-hassan-zahid/go-api-server/internal/dto"
-	appErrors "github.com/sudo-hassan-zahid/go-api-server/internal/errors"
+	"github.com/sudo-hassan-zahid/go-api-server/internal/dto"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/logger"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/service"
 	"github.com/sudo-hassan-zahid/go-api-server/utils"
-	"gorm.io/gorm"
 )
 
 type AuthHandler struct {
@@ -37,7 +33,7 @@ func (h *AuthHandler) CreateUser(c *fiber.Ctx) error {
 	var req dto.CreateUserRequest
 	if err := c.BodyParser(&req); err != nil {
 		logger.Log.Error().Err(err).Msg("Failed to parse request body")
-		return appErrors.HandleError(c, appErrors.ErrBadRequest)
+		return err
 	}
 
 	if ok := utils.ValidateStruct(c, &req); !ok {
@@ -48,10 +44,7 @@ func (h *AuthHandler) CreateUser(c *fiber.Ctx) error {
 	user, err := h.service.CreateUser(req.Email, req.Password, req.FirstName, req.LastName)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Failed to create user")
-		if errors.Is(err, gorm.ErrDuplicatedKey) {
-			return appErrors.HandleError(c, appErrors.ErrEmailAlreadyExists)
-		}
-		return appErrors.HandleError(c, err)
+		return err
 	}
 	logger.Log.Info().Msg("User created successfully")
 	return c.Status(fiber.StatusCreated).JSON(user)
@@ -72,7 +65,7 @@ func (h *AuthHandler) CreateUser(c *fiber.Ctx) error {
 func (h *AuthHandler) LoginUser(c *fiber.Ctx) error {
 	var req dto.LoginUserRequest
 	if err := c.BodyParser(&req); err != nil {
-		return appErrors.HandleError(c, appErrors.ErrBadRequest)
+		return err
 	}
 
 	if ok := utils.ValidateStruct(c, &req); !ok {
@@ -81,17 +74,17 @@ func (h *AuthHandler) LoginUser(c *fiber.Ctx) error {
 
 	user, err := h.service.LoginUser(req.Email, req.Password)
 	if err != nil {
-		return appErrors.HandleError(c, err)
+		return err
 	}
 
 	accessToken, err := auth.GenerateAccessToken(user.ID.String(), user.Role)
 	if err != nil {
-		return appErrors.HandleError(c, err)
+		return err
 	}
 
 	refreshToken, err := auth.GenerateRefreshToken(user.ID.String())
 	if err != nil {
-		return appErrors.HandleError(c, err)
+		return err
 	}
 
 	return c.Status(fiber.StatusOK).JSON(dto.LoginUserResponse{

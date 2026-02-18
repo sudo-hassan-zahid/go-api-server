@@ -1,8 +1,7 @@
 package service
 
 import (
-	appErrors "github.com/sudo-hassan-zahid/go-api-server/internal/errors"
-
+	"github.com/sudo-hassan-zahid/go-api-server/internal/domain"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/models"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/repository"
 	"gorm.io/gorm"
@@ -29,7 +28,7 @@ func (s *userService) GetAllUsers() ([]models.User, error) {
 func (s *userService) GetUserByID(id uint) (*models.User, error) {
 	user, err := s.repo.GetByID(id)
 	if err != nil {
-		return nil, appErrors.ErrUserNotFound
+		return nil, domain.ErrUserNotFound
 	}
 	return user, nil
 }
