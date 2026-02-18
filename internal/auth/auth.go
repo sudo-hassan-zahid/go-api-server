@@ -32,8 +32,8 @@ func GenerateAccessToken(userID, role string) (string, error) {
 	return GenerateJWT(userID, role, AccessTokenTTL)
 }
 
-func GenerateRefreshToken(userID string) (string, error) {
-	return GenerateJWT(userID, "", RefreshTokenTTL)
+func GenerateRefreshToken(userID, role string) (string, error) {
+	return GenerateJWT(userID, role, RefreshTokenTTL)
 }
 
 func ValidateToken(tokenString string) (*Claims, error) {

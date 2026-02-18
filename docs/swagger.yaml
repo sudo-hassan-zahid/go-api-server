@@ -227,7 +227,7 @@ paths:
               type: string
             type: object
       security:
-      - BearerAuth: []
+      - Bearer: []
       summary: Get all users
       tags:
       - Users
@@ -270,7 +270,7 @@ paths:
               type: string
             type: object
       security:
-      - BearerAuth: []
+      - Bearer: []
       summary: Delete a user
       tags:
       - Users
@@ -310,7 +310,7 @@ paths:
               type: string
             type: object
       security:
-      - BearerAuth: []
+      - Bearer: []
       summary: Get user by ID
       tags:
       - Users
@@ -356,12 +356,12 @@ paths:
               type: string
             type: object
       security:
-      - BearerAuth: []
+      - Bearer: []
       summary: Update a user
       tags:
       - Users
 securityDefinitions:
-  BearerAuth:
+  Bearer:
     description: Type "Bearer" followed by your JWT token.
     in: header
     name: Authorization

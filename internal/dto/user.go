@@ -26,3 +26,10 @@ type UpdateUserRequest struct {
 	LastName  string `json:"last_name" validate:"omitempty"`
 	Role      string `json:"role" validate:"omitempty,oneof=user admin"`
 }
+
+type SignupResponse struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	UserID       string `json:"user_id"`
+	Role         string `json:"role"`
+}

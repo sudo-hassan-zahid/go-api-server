@@ -1,10 +1,10 @@
 package handler
 
 import (
-	"strconv"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/dto"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/service"
 )
@@ -21,7 +21,7 @@ func NewUserHandler(s service.UserService) *UserHandler {
 // @Summary      Get all users
 // @Description  Returns a list of all existing users
 // @Tags         Users
-// @Security     BearerAuth
+// @Security     Bearer
 // @Accept       json
 // @Produce      json
 // @Success      200 {array} models.User "List of users"
@@ -39,7 +39,7 @@ func (h *UserHandler) GetAllUsers(c *fiber.Ctx) error {
 // @Summary      Get user by ID
 // @Description  Returns a single user by their ID
 // @Tags         Users
-// @Security     BearerAuth
+// @Security     Bearer
 // @Accept       json
 // @Produce      json
 // @Param        id path string true "User UUID"
@@ -50,12 +50,14 @@ func (h *UserHandler) GetAllUsers(c *fiber.Ctx) error {
 // @Router       /users/{id} [get]
 func (h *UserHandler) GetUserByID(c *fiber.Ctx) error {
 	idParam := c.Params("id")
-	id, err := strconv.ParseUint(idParam, 10, 32)
+	id, err := uuid.Parse(idParam)
 	if err != nil {
-		return err
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "invalid user id format",
+		})
 	}
 
-	user, err := h.service.GetUserByID(uint(id))
+	user, err := h.service.GetUserByID(id)
 	if err != nil {
 		return err
 	}
@@ -66,7 +68,7 @@ func (h *UserHandler) GetUserByID(c *fiber.Ctx) error {
 // @Summary      Update a user
 // @Description  Updates a user with given ID
 // @Tags         Users
-// @Security     BearerAuth
+// @Security     Bearer
 // @Accept       json
 // @Produce      json
 // @Param        id path string true "User UUID"
@@ -84,14 +86,14 @@ func (h *UserHandler) UpdateUser(c *fiber.Ctx) error {
 		})
 	}
 
-	id, err := strconv.ParseUint(userID, 10, 32)
+	id, err := uuid.Parse(userID)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": "invalid user id format",
 		})
 	}
 
-	_, err = h.service.GetUserByID(uint(id))
+	_, err = h.service.GetUserByID(id)
 	if err != nil {
 		return err
 	}
@@ -101,7 +103,7 @@ func (h *UserHandler) UpdateUser(c *fiber.Ctx) error {
 		return err
 	}
 
-	err = h.service.UpdateUser(uint(id), updateUser)
+	err = h.service.UpdateUser(id, updateUser)
 	if err != nil {
 		return err
 	}
@@ -114,7 +116,7 @@ func (h *UserHandler) UpdateUser(c *fiber.Ctx) error {
 // @Summary      Delete a user
 // @Description  Deletes a user with given ID
 // @Tags         Users
-// @Security     BearerAuth
+// @Security     Bearer
 // @Accept       json
 // @Produce      json
 // @Param        id path string true "User UUID"

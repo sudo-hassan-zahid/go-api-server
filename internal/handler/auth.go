@@ -4,7 +4,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/auth"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/dto"
-	"github.com/sudo-hassan-zahid/go-api-server/internal/logger"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/service"
 	"github.com/sudo-hassan-zahid/go-api-server/utils"
 )
@@ -32,22 +31,34 @@ func NewAuthHandler(s service.AuthService) *AuthHandler {
 func (h *AuthHandler) CreateUser(c *fiber.Ctx) error {
 	var req dto.CreateUserRequest
 	if err := c.BodyParser(&req); err != nil {
-		logger.Log.Error().Err(err).Msg("Failed to parse request body")
 		return err
 	}
 
 	if ok := utils.ValidateStruct(c, &req); !ok {
-		logger.Log.Warn().Msg("Validation failed")
 		return nil
 	}
 
 	user, err := h.service.CreateUser(req.Email, req.Password, req.FirstName, req.LastName)
 	if err != nil {
-		logger.Log.Error().Err(err).Msg("Failed to create user")
 		return err
 	}
-	logger.Log.Info().Msg("User created successfully")
-	return c.Status(fiber.StatusCreated).JSON(user)
+
+	accessToken, err := auth.GenerateAccessToken(user.ID.String(), user.Role)
+	if err != nil {
+		return err
+	}
+
+	refreshToken, err := auth.GenerateRefreshToken(user.ID.String(), user.Role)
+	if err != nil {
+		return err
+	}
+
+	return c.Status(fiber.StatusCreated).JSON(dto.SignupResponse{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		UserID:       user.ID.String(),
+		Role:         user.Role,
+	})
 }
 
 // LoginUser 	 godoc
@@ -82,7 +93,7 @@ func (h *AuthHandler) LoginUser(c *fiber.Ctx) error {
 		return err
 	}
 
-	refreshToken, err := auth.GenerateRefreshToken(user.ID.String())
+	refreshToken, err := auth.GenerateRefreshToken(user.ID.String(), user.Role)
 	if err != nil {
 		return err
 	}

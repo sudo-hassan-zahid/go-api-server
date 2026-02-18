@@ -1,6 +1,7 @@
 package service
 
 import (
+	"github.com/google/uuid"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/domain"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/dto"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/models"
@@ -10,8 +11,8 @@ import (
 
 type UserService interface {
 	GetAllUsers() ([]models.User, error)
-	GetUserByID(id uint) (*models.User, error)
-	UpdateUser(id uint, req dto.UpdateUserRequest) error
+	GetUserByID(id uuid.UUID) (*models.User, error)
+	UpdateUser(id uuid.UUID, req dto.UpdateUserRequest) error
 }
 
 type userService struct {
@@ -27,7 +28,7 @@ func (s *userService) GetAllUsers() ([]models.User, error) {
 	return s.repo.GetAll()
 }
 
-func (s *userService) GetUserByID(id uint) (*models.User, error) {
+func (s *userService) GetUserByID(id uuid.UUID) (*models.User, error) {
 	user, err := s.repo.GetByID(id)
 	if err != nil {
 		return nil, domain.ErrUserNotFound
@@ -35,7 +36,7 @@ func (s *userService) GetUserByID(id uint) (*models.User, error) {
 	return user, nil
 }
 
-func (s *userService) UpdateUser(id uint, req dto.UpdateUserRequest) error {
+func (s *userService) UpdateUser(id uuid.UUID, req dto.UpdateUserRequest) error {
 	err := s.repo.UpdateUser(id, req)
 	if err != nil {
 		return err

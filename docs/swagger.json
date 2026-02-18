@@ -189,7 +189,7 @@
             "get": {
                 "security": [
                     {
-                        "BearerAuth": []
+                        "Bearer": []
                     }
                 ],
                 "description": "Returns a list of all existing users",
@@ -229,7 +229,7 @@
             "get": {
                 "security": [
                     {
-                        "BearerAuth": []
+                        "Bearer": []
                     }
                 ],
                 "description": "Returns a single user by their ID",
@@ -291,7 +291,7 @@
             "delete": {
                 "security": [
                     {
-                        "BearerAuth": []
+                        "Bearer": []
                     }
                 ],
                 "description": "Deletes a user with given ID",
@@ -356,7 +356,7 @@
             "patch": {
                 "security": [
                     {
-                        "BearerAuth": []
+                        "Bearer": []
                     }
                 ],
                 "description": "Updates a user with given ID",
@@ -550,7 +550,7 @@
         }
     },
     "securityDefinitions": {
-        "BearerAuth": {
+        "Bearer": {
             "description": "Type \"Bearer\" followed by your JWT token.",
             "type": "apiKey",
             "name": "Authorization",

@@ -27,7 +27,7 @@ import (
 // @version           				1.0
 // @description       				This API server is powered by Go. Using PostgreSQL for DB with a magical touch of GORM
 // @BasePath          				/api
-// @securityDefinitions.apikey		BearerAuth
+// @securityDefinitions.apikey		Bearer
 // @in 								header
 // @name 							Authorization
 // @description 					Type "Bearer" followed by your JWT token.
