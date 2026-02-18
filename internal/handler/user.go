@@ -25,6 +25,7 @@ func NewUserHandler(s service.UserService) *UserHandler {
 // @Accept       json
 // @Produce      json
 // @Success      200 {array} models.User "List of users"
+// @Success      429 {object} map[string]string "Too many requests"
 // @Failure      500 {object} map[string]string "Internal server error"
 // @Router       /users [get]
 func (h *UserHandler) GetAllUsers(c *fiber.Ctx) error {
@@ -46,6 +47,7 @@ func (h *UserHandler) GetAllUsers(c *fiber.Ctx) error {
 // @Success      200 {object} models.User "User found"
 // @Failure      400 {object} map[string]string "Invalid ID"
 // @Failure      404 {object} map[string]string "User not found"
+// @Failure      429 {object} map[string]string "Too many requests"
 // @Failure      500 {object} map[string]string "Internal server error"
 // @Router       /users/{id} [get]
 func (h *UserHandler) GetUserByID(c *fiber.Ctx) error {
@@ -76,6 +78,7 @@ func (h *UserHandler) GetUserByID(c *fiber.Ctx) error {
 // @Success      200 {object} dto.SuccessResponse "User updated successfully"
 // @Failure      400 {object} map[string]string "Bad request / validation error"
 // @Failure      401 {object} map[string]string "Unauthorized"
+// @Failure      429 {object} map[string]string "Too many requests"
 // @Failure      500 {object} map[string]string "Internal server error"
 // @Router       /users/{id} [patch]
 func (h *UserHandler) UpdateUser(c *fiber.Ctx) error {
@@ -123,6 +126,7 @@ func (h *UserHandler) UpdateUser(c *fiber.Ctx) error {
 // @Success      200 {object} map[string]string "User deleted successfully"
 // @Failure      400 {object} map[string]string "Bad request / validation error"
 // @Failure      401 {object} map[string]string "Unauthorized"
+// @Failure      429 {object} map[string]string "Too many requests"
 // @Failure      500 {object} map[string]string "Internal server error"
 // @Router       /users/{id} [delete]
 func (h *UserHandler) DeleteUser(c *fiber.Ctx) error {

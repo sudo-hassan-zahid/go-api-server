@@ -22,6 +22,7 @@ func NewPublicHandler(db *gorm.DB) *PublicHandler {
 // @Accept      json
 // @Produce     json
 // @Success 	200 {object} map[string]interface{}
+// @Success 	429 {object} map[string]string "Too many requests"
 // @Router      /health/server [get]
 func (h *PublicHandler) HealthCheckServer(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
@@ -37,6 +38,7 @@ func (h *PublicHandler) HealthCheckServer(c *fiber.Ctx) error {
 // @Accept      json
 // @Produce     json
 // @Success     200 {object} map[string]interface{}
+// @Failure     429 {object} map[string]string "Too many requests"
 // @Failure     503 {object} map[string]interface{}
 // @Router      /health/db [get]
 func (h *PublicHandler) HealthCheckDB(c *fiber.Ctx) error {

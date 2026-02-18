@@ -26,6 +26,7 @@ func NewAuthHandler(s service.AuthService) *AuthHandler {
 // @Success      201 {object} models.User "Created user"
 // @Failure      400 {object} map[string]string "Bad request / validation error"
 // @Failure      409 {object} map[string]string "Email already exists"
+// @Failure      429 {object} map[string]string "Too many requests"
 // @Failure      500 {object} map[string]string "Internal server error"
 // @Router       /auth/signup [post]
 func (h *AuthHandler) CreateUser(c *fiber.Ctx) error {
@@ -71,6 +72,7 @@ func (h *AuthHandler) CreateUser(c *fiber.Ctx) error {
 // @Success      200 {object} dto.LoginUserResponse "Login successful, returns user object"
 // @Failure      400 {object} map[string]string "Bad request / validation error"
 // @Failure      401 {object} map[string]string "Invalid credentials"
+// @Failure      429 {object} map[string]string "Too many requests"
 // @Failure      500 {object} map[string]string "Internal server error"
 // @Router       /auth/login [post]
 func (h *AuthHandler) LoginUser(c *fiber.Ctx) error {

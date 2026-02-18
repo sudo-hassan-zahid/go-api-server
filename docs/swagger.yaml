@@ -122,6 +122,12 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "429":
+          description: Too many requests
+          schema:
+            additionalProperties:
+              type: string
+            type: object
         "500":
           description: Internal server error
           schema:
@@ -162,6 +168,12 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "429":
+          description: Too many requests
+          schema:
+            additionalProperties:
+              type: string
+            type: object
         "500":
           description: Internal server error
           schema:
@@ -184,6 +196,12 @@ paths:
           schema:
             additionalProperties: true
             type: object
+        "429":
+          description: Too many requests
+          schema:
+            additionalProperties:
+              type: string
+            type: object
         "503":
           description: Service Unavailable
           schema:
@@ -205,6 +223,12 @@ paths:
           schema:
             additionalProperties: true
             type: object
+        "429":
+          description: Too many requests
+          schema:
+            additionalProperties:
+              type: string
+            type: object
       summary: Health check server
       tags:
       - Health
@@ -222,6 +246,12 @@ paths:
             items:
               $ref: '#/definitions/models.User'
             type: array
+        "429":
+          description: Too many requests
+          schema:
+            additionalProperties:
+              type: string
+            type: object
         "500":
           description: Internal server error
           schema:
@@ -265,6 +295,12 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "429":
+          description: Too many requests
+          schema:
+            additionalProperties:
+              type: string
+            type: object
         "500":
           description: Internal server error
           schema:
@@ -301,6 +337,12 @@ paths:
             type: object
         "404":
           description: User not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "429":
+          description: Too many requests
           schema:
             additionalProperties:
               type: string
@@ -347,6 +389,12 @@ paths:
             type: object
         "401":
           description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "429":
+          description: Too many requests
           schema:
             additionalProperties:
               type: string
