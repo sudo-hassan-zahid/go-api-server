@@ -78,7 +78,7 @@ func (h *AuthHandler) VerifyEmail(c *fiber.Ctx) error {
 	}
 
 	if err := h.service.VerifyEmail(token); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid or expired token"})
+		return err
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "Email verified successfully"})
@@ -202,7 +202,7 @@ func (h *AuthHandler) ResetPassword(c *fiber.Ctx) error {
 	}
 
 	if err := h.service.ResetPassword(req.Token, req.NewPassword); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid or expired token"})
+		return err
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "Password reset successfully"})

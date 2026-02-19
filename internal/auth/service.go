@@ -2,7 +2,6 @@ package auth
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -10,6 +9,7 @@ import (
 	"github.com/sudo-hassan-zahid/go-api-server/internal/constants"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/database"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/errors"
+	"github.com/sudo-hassan-zahid/go-api-server/internal/logger"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/models"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/repository"
 	"github.com/sudo-hassan-zahid/go-api-server/utils"
@@ -47,11 +47,11 @@ func (s *Service) Register(email, password, firstName, lastName string) (*models
 
 	verificationToken := uuid.New().String()
 	if err := database.Rdb.Set(context.Background(), "verify_email:"+verificationToken, user.ID.String(), 24*time.Hour).Err(); err != nil {
-		fmt.Printf("Failed to store verification token: %v\n", err)
+		logger.Log.Error().Err(err).Msg("Failed to store verification token")
 	} else {
 		go func() {
 			if err := utils.SendVerificationEmail(user.Email, verificationToken, s.smtpConfig); err != nil {
-				fmt.Printf("Failed to send verification email: %v\n", err)
+				logger.Log.Error().Err(err).Msg("Failed to send verification email")
 			}
 		}()
 	}
@@ -85,17 +85,14 @@ func (s *Service) VerifyEmail(token string) error {
 func (s *Service) ForgotPassword(email string) error {
 	user, err := s.userRepo.GetByEmail(email)
 	if err != nil {
-		// Don't reveal if user exists
 		return nil
 	}
 
-	// Generate 6-digit numeric token
 	token, err := utils.GenerateRandomCode(6)
 	if err != nil {
 		return err
 	}
 
-	// Store in Redis with 15m TTL (common for short codes)
 	if err := database.Rdb.Set(context.Background(), "reset_password:"+token, user.ID.String(), 15*time.Minute).Err(); err != nil {
 		return err
 	}
@@ -131,7 +128,7 @@ func (s *Service) ResetPassword(token, newPassword string) error {
 	}
 
 	database.Rdb.Del(ctx, key)
-	// Invalidate all sessions
+
 	s.LogoutAll(userID)
 
 	return nil
