@@ -1,8 +1,10 @@
 package logger
 
 import (
+	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -23,11 +25,48 @@ func Init(levelStr string, env string) {
 
 	var output io.Writer = os.Stdout
 
-	if env == constants.ENV_DEVELOPMENT {
-		output = zerolog.ConsoleWriter{
+	if strings.ToLower(env) == constants.ENV_DEVELOPMENT {
+		console := zerolog.ConsoleWriter{
 			Out:        os.Stdout,
-			TimeFormat: time.RFC3339,
+			TimeFormat: "15:04:05",
 		}
+
+		console.FormatCaller = func(i interface{}) string {
+			if c, ok := i.(string); ok {
+				return filepath.Base(c)
+			}
+			return ""
+		}
+
+		console.FormatLevel = func(i interface{}) string {
+			level := strings.ToUpper(i.(string))
+			switch level {
+			case "INFO":
+				return "\033[32m" + level + "\033[0m"
+			case "WARN":
+				return "\033[33m" + level + "\033[0m"
+			case "ERROR":
+				return "\033[31m" + level + "\033[0m"
+			case "DEBUG":
+				return "\033[36m" + level + "\033[0m"
+			default:
+				return level
+			}
+		}
+
+		console.FormatMessage = func(i interface{}) string {
+			return i.(string)
+		}
+
+		console.FormatFieldName = func(i interface{}) string {
+			return i.(string) + "="
+		}
+
+		console.FormatFieldValue = func(i interface{}) string {
+			return strings.TrimSpace(fmt.Sprintf("%v", i))
+		}
+
+		output = console
 	}
 
 	Log = zerolog.New(output).
