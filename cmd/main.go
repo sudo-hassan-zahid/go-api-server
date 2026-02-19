@@ -2,14 +2,13 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
+	"gorm.io/gorm"
 
 	_ "github.com/sudo-hassan-zahid/go-api-server/docs"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/auth"
@@ -18,6 +17,7 @@ import (
 	"github.com/sudo-hassan-zahid/go-api-server/internal/database"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/handler"
 	appLogger "github.com/sudo-hassan-zahid/go-api-server/internal/logger"
+	"github.com/sudo-hassan-zahid/go-api-server/internal/middleware"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/models"
 	"github.com/sudo-hassan-zahid/go-api-server/routes"
 	swagger "github.com/swaggo/fiber-swagger"
@@ -45,7 +45,7 @@ func run() error {
 	}
 
 	// Initialize Logger
-	appLogger.Init(cfg.Log, cfg.App.Environment)
+	appLogger.Init(cfg.Log.Level, cfg.App.Environment)
 
 	// Initialize Database
 	db, err := database.Connect(cfg.DB, cfg.App.Environment == constants.ENV_DEVELOPMENT)
@@ -64,8 +64,10 @@ func run() error {
 	app := handler.NewApp()
 
 	// Middlewares
-	app.Use(recover.New())
-	app.Use(logger.New())
+	app.Use(middleware.RequestLogger())
+	app.Use(recover.New(recover.Config{
+		EnableStackTrace: cfg.App.Environment == constants.ENV_DEVELOPMENT,
+	}))
 
 	// Initialize auth
 	auth.Init(cfg)
@@ -82,7 +84,8 @@ func run() error {
 	go func() {
 		appLogger.Log.Info().
 			Str("port", cfg.App.Port).
-			Msg("Starting server")
+			Str("env", cfg.App.Environment).
+			Msg("starting server")
 
 		serverErrors <- app.Listen(":" + cfg.App.Port)
 	}()
@@ -119,8 +122,8 @@ func run() error {
 	return nil
 }
 
-func closeDatabase(dbConn interface{ DB() (*sql.DB, error) }) error {
-	sqlDB, err := dbConn.DB()
+func closeDatabase(db *gorm.DB) error {
+	sqlDB, err := db.DB()
 	if err != nil {
 		return err
 	}
