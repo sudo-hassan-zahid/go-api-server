@@ -129,11 +129,8 @@ definitions:
       updated_at:
         type: string
     type: object
-host: localhost:8080
 info:
-  contact:
-    email: support@swagger.io
-    name: API Support
+  contact: {}
   description: This is a production-grade API server written in Go using Fiber and
     GORM.
   license:
