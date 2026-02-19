@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 
+	"github.com/sudo-hassan-zahid/go-api-server/internal/constants"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/database"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/errors"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/models"
@@ -29,6 +30,7 @@ func (s *Service) Register(email, password, firstName, lastName string) (*models
 		Password:  password,
 		FirstName: firstName,
 		LastName:  lastName,
+		Role:      string(constants.RoleUser),
 	}
 
 	if err := s.userRepo.Create(user); err != nil {
