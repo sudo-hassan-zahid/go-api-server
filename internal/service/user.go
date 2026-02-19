@@ -13,6 +13,7 @@ type UserService interface {
 	GetAllUsers() ([]models.User, error)
 	GetUserByID(id uuid.UUID) (*models.User, error)
 	UpdateUser(id uuid.UUID, req dto.UpdateUserRequest) error
+	DeleteUser(id uuid.UUID) error
 }
 
 type userService struct {
@@ -38,6 +39,14 @@ func (s *userService) GetUserByID(id uuid.UUID) (*models.User, error) {
 
 func (s *userService) UpdateUser(id uuid.UUID, req dto.UpdateUserRequest) error {
 	err := s.repo.UpdateUser(id, req)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *userService) DeleteUser(id uuid.UUID) error {
+	err := s.repo.DeleteUser(id)
 	if err != nil {
 		return err
 	}

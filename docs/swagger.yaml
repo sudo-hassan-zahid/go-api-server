@@ -45,11 +45,6 @@ definitions:
       user_role:
         type: string
     type: object
-  dto.SuccessResponse:
-    properties:
-      message:
-        type: string
-    type: object
   dto.UpdateUserRequest:
     properties:
       email:
@@ -295,6 +290,12 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "404":
+          description: User not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
         "429":
           description: Too many requests
           schema:
@@ -380,7 +381,9 @@ paths:
         "200":
           description: User updated successfully
           schema:
-            $ref: '#/definitions/dto.SuccessResponse'
+            additionalProperties:
+              type: string
+            type: object
         "400":
           description: Bad request / validation error
           schema:

@@ -17,6 +17,7 @@ type UserRepository interface {
 	GetByID(id uuid.UUID) (*models.User, error)
 	GetAll() ([]models.User, error)
 	UpdateUser(id uuid.UUID, req dto.UpdateUserRequest) error
+	DeleteUser(id uuid.UUID) error
 }
 
 type userRepo struct {
@@ -93,6 +94,20 @@ func (r *userRepo) UpdateUser(id uuid.UUID, req dto.UpdateUserRequest) error {
 		if err := r.db.Model(&user).Updates(updates).Error; err != nil {
 			return customerrors.ParseDatabaseError(err)
 		}
+	}
+
+	return nil
+}
+
+func (r *userRepo) DeleteUser(id uuid.UUID) error {
+	result := r.db.Delete(&models.User{}, "id = ?", id)
+
+	if result.Error != nil {
+		return customerrors.ParseDatabaseError(result.Error)
+	}
+
+	if result.RowsAffected == 0 {
+		return customerrors.ErrUserNotFound
 	}
 
 	return nil
