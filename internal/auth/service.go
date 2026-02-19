@@ -164,3 +164,7 @@ func (s *Service) RefreshToken(refreshToken string) (string, string, error) {
 
 	return newAccessToken, newRefreshToken, nil
 }
+
+func (s *Service) InvalidateRefreshToken(tokenString string) error {
+	return InvalidateToken(tokenString, RefreshTokenTTL)
+}

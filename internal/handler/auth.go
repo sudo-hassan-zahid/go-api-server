@@ -139,5 +139,21 @@ func (h *AuthHandler) RefreshToken(c *fiber.Ctx) error {
 // @Success      200 {object} map[string]string "Logged out"
 // @Router       /auth/logout [post]
 func (h *AuthHandler) Logout(c *fiber.Ctx) error {
+	tokenString := c.Get("Authorization")
+	if len(tokenString) > 7 && tokenString[:7] == "Bearer " {
+		tokenString = tokenString[7:]
+	} else {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Missing or invalid token"})
+	}
+
+	var req dto.LogoutRequest
+	if err := c.BodyParser(&req); err == nil && req.RefreshToken != "" {
+		_ = h.service.InvalidateRefreshToken(req.RefreshToken)
+	}
+
+	if err := h.service.Logout("", tokenString); err != nil {
+		return err
+	}
+
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "Logged out successfully"})
 }
