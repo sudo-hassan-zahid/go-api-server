@@ -2,6 +2,7 @@ package routes
 
 import (
 	"github.com/sudo-hassan-zahid/go-api-server/internal/auth"
+	"github.com/sudo-hassan-zahid/go-api-server/internal/constants"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/handler"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/middleware"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/repository"
@@ -48,7 +49,7 @@ func Setup(app *fiber.App, db *gorm.DB) {
 	users.Get("/", jwt, authRateLimiter, userHandler.GetAllUsers)
 	users.Get("/:id", jwt, authRateLimiter, userHandler.GetUserByID)
 	users.Patch("/:id", jwt, authRateLimiter, userHandler.UpdateUser)
-	users.Delete("/:id", jwt, authRateLimiter, userHandler.DeleteUser)
+	users.Delete("/:id", jwt, authRateLimiter, middleware.RBAC(constants.RoleAdmin), userHandler.DeleteUser)
 
 	// Public routes
 	publicHandler := handler.NewPublicHandler(db)
