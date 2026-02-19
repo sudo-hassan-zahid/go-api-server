@@ -4,15 +4,14 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/auth"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/dto"
-	"github.com/sudo-hassan-zahid/go-api-server/internal/service"
 	"github.com/sudo-hassan-zahid/go-api-server/utils"
 )
 
 type AuthHandler struct {
-	service service.AuthService
+	service *auth.Service
 }
 
-func NewAuthHandler(s service.AuthService) *AuthHandler {
+func NewAuthHandler(s *auth.Service) *AuthHandler {
 	return &AuthHandler{service: s}
 }
 
@@ -23,7 +22,7 @@ func NewAuthHandler(s service.AuthService) *AuthHandler {
 // @Accept       json
 // @Produce      json
 // @Param        user body dto.CreateUserRequest true "User info"
-// @Success      201 {object} models.User "Created user"
+// @Success      201 {object} dto.SignupResponse "Created user"
 // @Failure      400 {object} map[string]string "Bad request / validation error"
 // @Failure      409 {object} map[string]string "Email already exists"
 // @Failure      429 {object} map[string]string "Too many requests"
@@ -39,7 +38,7 @@ func (h *AuthHandler) CreateUser(c *fiber.Ctx) error {
 		return nil
 	}
 
-	user, err := h.service.CreateUser(req.Email, req.Password, req.FirstName, req.LastName)
+	user, err := h.service.Register(req.Email, req.Password, req.FirstName, req.LastName)
 	if err != nil {
 		return err
 	}
@@ -69,7 +68,7 @@ func (h *AuthHandler) CreateUser(c *fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Param        user body dto.LoginUserRequest true "User credentials"
-// @Success      200 {object} dto.LoginUserResponse "Login successful, returns user object"
+// @Success      200 {object} dto.LoginUserResponse "Login successful, returns tokens"
 // @Failure      400 {object} map[string]string "Bad request / validation error"
 // @Failure      401 {object} map[string]string "Invalid credentials"
 // @Failure      429 {object} map[string]string "Too many requests"
@@ -85,25 +84,60 @@ func (h *AuthHandler) LoginUser(c *fiber.Ctx) error {
 		return nil
 	}
 
-	user, err := h.service.LoginUser(req.Email, req.Password)
+	accessToken, refreshToken, err := h.service.Login(req.Email, req.Password)
 	if err != nil {
 		return err
 	}
 
-	accessToken, err := auth.GenerateAccessToken(user.ID.String(), user.Role)
-	if err != nil {
-		return err
-	}
-
-	refreshToken, err := auth.GenerateRefreshToken(user.ID.String(), user.Role)
-	if err != nil {
-		return err
-	}
+	claims, _ := auth.ValidateToken(accessToken)
 
 	return c.Status(fiber.StatusOK).JSON(dto.LoginUserResponse{
-		UserID:       user.ID.String(),
-		UserRole:     user.Role,
+		UserID:       claims.UserID,
+		UserRole:     claims.Role,
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	})
+}
+
+// RefreshToken 	godoc
+// @Summary      Refresh access token
+// @Description  Get a new access token using a refresh token
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        body body dto.RefreshTokenRequest true "Refresh Token"
+// @Success      200 {object} dto.RefreshTokenResponse "New tokens"
+// @Failure      400 {object} map[string]string "Bad request"
+// @Failure      401 {object} map[string]string "Invalid token"
+// @Router       /auth/refresh [post]
+func (h *AuthHandler) RefreshToken(c *fiber.Ctx) error {
+	var req dto.RefreshTokenRequest
+	if err := c.BodyParser(&req); err != nil {
+		return err
+	}
+
+	if ok := utils.ValidateStruct(c, &req); !ok {
+		return nil
+	}
+
+	accessToken, refreshToken, err := h.service.RefreshToken(req.RefreshToken)
+	if err != nil {
+		return err
+	}
+
+	return c.Status(fiber.StatusOK).JSON(dto.RefreshTokenResponse{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	})
+}
+
+// Logout 		 godoc
+// @Summary      Logout
+// @Description  Invalidate access/refresh tokens
+// @Tags         Auth
+// @Security     Bearer
+// @Success      200 {object} map[string]string "Logged out"
+// @Router       /auth/logout [post]
+func (h *AuthHandler) Logout(c *fiber.Ctx) error {
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "Logged out successfully"})
 }

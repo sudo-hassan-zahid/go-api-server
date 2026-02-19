@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"github.com/sudo-hassan-zahid/go-api-server/internal/auth"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/handler"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/middleware"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/repository"
@@ -30,12 +31,14 @@ func Setup(app *fiber.App, db *gorm.DB) {
 	api := app.Group("/api")
 
 	// Auth APIs
-	authRepo := repository.NewAuthRepository(db)
-	authService := service.NewAuthService(authRepo, db)
+	authRepo := repository.NewUserRepository(db)
+	authService := auth.NewService(authRepo)
 	authHandler := handler.NewAuthHandler(authService)
-	auth := api.Group("/auth")
-	auth.Post("/signup", publicRateLimiter, authHandler.CreateUser)
-	auth.Post("/login", publicRateLimiter, authHandler.LoginUser)
+	authRoutes := api.Group("/auth")
+	authRoutes.Post("/signup", publicRateLimiter, authHandler.CreateUser)
+	authRoutes.Post("/login", publicRateLimiter, authHandler.LoginUser)
+	authRoutes.Post("/refresh", publicRateLimiter, authHandler.RefreshToken)
+	authRoutes.Post("/logout", jwt, authHandler.Logout)
 
 	// User APIs
 	userRepo := repository.NewUserRepository(db)

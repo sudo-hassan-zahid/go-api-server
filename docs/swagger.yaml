@@ -45,6 +45,31 @@ definitions:
       user_role:
         type: string
     type: object
+  dto.RefreshTokenRequest:
+    properties:
+      refresh_token:
+        type: string
+    required:
+    - refresh_token
+    type: object
+  dto.RefreshTokenResponse:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
+        type: string
+    type: object
+  dto.SignupResponse:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
+        type: string
+      role:
+        type: string
+      user_id:
+        type: string
+    type: object
   dto.UpdateUserRequest:
     properties:
       email:
@@ -102,7 +127,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: Login successful, returns user object
+          description: Login successful, returns tokens
           schema:
             $ref: '#/definitions/dto.LoginUserResponse'
         "400":
@@ -132,6 +157,55 @@ paths:
       summary: Login an existing user
       tags:
       - Auth
+  /auth/logout:
+    post:
+      description: Invalidate access/refresh tokens
+      responses:
+        "200":
+          description: Logged out
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Logout
+      tags:
+      - Auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Get a new access token using a refresh token
+      parameters:
+      - description: Refresh Token
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RefreshTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: New tokens
+          schema:
+            $ref: '#/definitions/dto.RefreshTokenResponse'
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Invalid token
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Refresh access token
+      tags:
+      - Auth
   /auth/signup:
     post:
       consumes:
@@ -150,7 +224,7 @@ paths:
         "201":
           description: Created user
           schema:
-            $ref: '#/definitions/models.User'
+            $ref: '#/definitions/dto.SignupResponse'
         "400":
           description: Bad request / validation error
           schema:

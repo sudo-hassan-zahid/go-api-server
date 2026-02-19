@@ -53,6 +53,11 @@ func run() error {
 		return err
 	}
 
+	// Initialize Redis
+	if err := database.ConnectRedis(cfg.Redis); err != nil {
+		return err
+	}
+
 	// Initialize Database
 	if cfg.App.Environment == constants.ENV_DEVELOPMENT {
 		if err := db.AutoMigrate(&models.User{}); err != nil {
@@ -115,6 +120,11 @@ func run() error {
 	// Close Database
 	if err := closeDatabase(db); err != nil {
 		appLogger.Log.Error().Err(err).Msg("Failed to close DB")
+	}
+
+	// Close Redis
+	if err := database.CloseRedis(); err != nil {
+		appLogger.Log.Error().Err(err).Msg("Failed to close Redis")
 	}
 
 	appLogger.Log.Info().Msg("Server gracefully stopped")
