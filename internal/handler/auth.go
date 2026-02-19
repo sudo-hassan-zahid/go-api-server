@@ -69,7 +69,8 @@ func (h *AuthHandler) CreateUser(c *fiber.Ctx) error {
 // @Produce      json
 // @Param        token query string true "Verification Token"
 // @Success      200 {object} map[string]string "Email verified"
-// @Failure      400 {object} map[string]string "Invalid token"
+// @Failure      400 {object} map[string]string "Invalid or expired token"
+// @Failure      500 {object} map[string]string "Internal server error"
 // @Router       /auth/verify-email [get]
 func (h *AuthHandler) VerifyEmail(c *fiber.Ctx) error {
 	token := c.Query("token")
@@ -86,7 +87,7 @@ func (h *AuthHandler) VerifyEmail(c *fiber.Ctx) error {
 
 // LoginUser 	 godoc
 // @Summary      Login an existing user
-// @Description  Logins an existing user using email and password
+// @Description  Authenticate user with email and password to get access and refresh tokens
 // @Tags         Auth
 // @Accept       json
 // @Produce      json
@@ -124,7 +125,7 @@ func (h *AuthHandler) LoginUser(c *fiber.Ctx) error {
 
 // RefreshToken 	godoc
 // @Summary      Refresh access token
-// @Description  Get a new access token using a refresh token
+// @Description  Get a new access token using a valid refresh token
 // @Tags         Auth
 // @Accept       json
 // @Produce      json
@@ -132,6 +133,7 @@ func (h *AuthHandler) LoginUser(c *fiber.Ctx) error {
 // @Success      200 {object} dto.RefreshTokenResponse "New tokens"
 // @Failure      400 {object} map[string]string "Bad request"
 // @Failure      401 {object} map[string]string "Invalid token"
+// @Failure      500 {object} map[string]string "Internal server error"
 // @Router       /auth/refresh [post]
 func (h *AuthHandler) RefreshToken(c *fiber.Ctx) error {
 	var req dto.RefreshTokenRequest
@@ -156,13 +158,14 @@ func (h *AuthHandler) RefreshToken(c *fiber.Ctx) error {
 
 // ForgotPassword godoc
 // @Summary      Request password reset
-// @Description  Sends a password reset link to the user's email
+// @Description  Initiate password reset flow by sending a verification code to the user's email
 // @Tags         Auth
 // @Accept       json
 // @Produce      json
 // @Param        body body dto.ForgotPasswordRequest true "Email"
 // @Success      200 {object} map[string]string "Email sent"
-// @Failure      400 {object} map[string]string "Bad request"
+// @Failure      400 {object} map[string]string "Validation error"
+// @Failure      500 {object} map[string]string "Internal server error"
 // @Router       /auth/forgot-password [post]
 func (h *AuthHandler) ForgotPassword(c *fiber.Ctx) error {
 	var req dto.ForgotPasswordRequest
@@ -183,13 +186,14 @@ func (h *AuthHandler) ForgotPassword(c *fiber.Ctx) error {
 
 // ResetPassword godoc
 // @Summary      Reset password
-// @Description  Resets user password using token
+// @Description  Complete password reset using the verification code and new password
 // @Tags         Auth
 // @Accept       json
 // @Produce      json
 // @Param        body body dto.ResetPasswordRequest true "Token and New Password"
 // @Success      200 {object} map[string]string "Password reset successful"
-// @Failure      400 {object} map[string]string "Bad request"
+// @Failure      400 {object} map[string]string "Invalid token or validation error"
+// @Failure      500 {object} map[string]string "Internal server error"
 // @Router       /auth/reset-password [post]
 func (h *AuthHandler) ResetPassword(c *fiber.Ctx) error {
 	var req dto.ResetPasswordRequest
@@ -210,10 +214,16 @@ func (h *AuthHandler) ResetPassword(c *fiber.Ctx) error {
 
 // Logout 		 godoc
 // @Summary      Logout
-// @Description  Invalidate access/refresh tokens
+// @Description  Invalidate access and refresh tokens. Requires Bearer token.
 // @Tags         Auth
 // @Security     Bearer
+// @Accept       json
+// @Produce      json
+// @Param        body body dto.LogoutRequest true "Refresh Token"
 // @Success      200 {object} map[string]string "Logged out"
+// @Failure      400 {object} map[string]string "Validation error"
+// @Failure      401 {object} map[string]string "Unauthorized"
+// @Failure      500 {object} map[string]string "Internal server error"
 // @Router       /auth/logout [post]
 func (h *AuthHandler) Logout(c *fiber.Ctx) error {
 	tokenString := c.Get("Authorization")

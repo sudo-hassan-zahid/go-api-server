@@ -25,12 +25,15 @@ import (
 
 // @title             				Go API Server
 // @version           				1.0
-// @description       				This API server is powered by Go. Using PostgreSQL for DB with a magical touch of GORM
+// @description       				This is a production-grade API server written in Go using Fiber and GORM.
+// @termsOfService    				http://swagger.io/terms/
+// @license.name      				Apache 2.0
+// @license.url       				http://www.apache.org/licenses/LICENSE-2.0.html
 // @BasePath          				/api
 // @securityDefinitions.apikey		Bearer
 // @in 								header
 // @name 							Authorization
-// @description 					Type "Bearer" followed by your JWT token.
+// @description 					Type "Bearer" followed by a space and JWT token.
 func main() {
 	if err := run(); err != nil {
 		appLogger.Log.Fatal().Err(err).Msg("Application crashed")

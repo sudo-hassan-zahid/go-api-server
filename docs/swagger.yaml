@@ -21,6 +21,13 @@ definitions:
     - last_name
     - password
     type: object
+  dto.ForgotPasswordRequest:
+    properties:
+      email:
+        type: string
+    required:
+    - email
+    type: object
   dto.LoginUserRequest:
     properties:
       email:
@@ -45,6 +52,13 @@ definitions:
       user_role:
         type: string
     type: object
+  dto.LogoutRequest:
+    properties:
+      refresh_token:
+        type: string
+    required:
+    - refresh_token
+    type: object
   dto.RefreshTokenRequest:
     properties:
       refresh_token:
@@ -58,6 +72,17 @@ definitions:
         type: string
       refresh_token:
         type: string
+    type: object
+  dto.ResetPasswordRequest:
+    properties:
+      new_password:
+        minLength: 8
+        type: string
+      token:
+        type: string
+    required:
+    - new_password
+    - token
     type: object
   dto.SignupResponse:
     properties:
@@ -104,18 +129,63 @@ definitions:
       updated_at:
         type: string
     type: object
+host: localhost:8080
 info:
-  contact: {}
-  description: This API server is powered by Go. Using PostgreSQL for DB with a magical
-    touch of GORM
+  contact:
+    email: support@swagger.io
+    name: API Support
+  description: This is a production-grade API server written in Go using Fiber and
+    GORM.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
   title: Go API Server
   version: "1.0"
 paths:
+  /auth/forgot-password:
+    post:
+      consumes:
+      - application/json
+      description: Initiate password reset flow by sending a verification code to
+        the user's email
+      parameters:
+      - description: Email
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ForgotPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Email sent
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Validation error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Request password reset
+      tags:
+      - Auth
   /auth/login:
     post:
       consumes:
       - application/json
-      description: Logins an existing user using email and password
+      description: Authenticate user with email and password to get access and refresh
+        tokens
       parameters:
       - description: User credentials
         in: body
@@ -159,10 +229,39 @@ paths:
       - Auth
   /auth/logout:
     post:
-      description: Invalidate access/refresh tokens
+      consumes:
+      - application/json
+      description: Invalidate access and refresh tokens. Requires Bearer token.
+      parameters:
+      - description: Refresh Token
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.LogoutRequest'
+      produces:
+      - application/json
       responses:
         "200":
           description: Logged out
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Validation error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
           schema:
             additionalProperties:
               type: string
@@ -176,7 +275,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Get a new access token using a refresh token
+      description: Get a new access token using a valid refresh token
       parameters:
       - description: Refresh Token
         in: body
@@ -203,7 +302,49 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
       summary: Refresh access token
+      tags:
+      - Auth
+  /auth/reset-password:
+    post:
+      consumes:
+      - application/json
+      description: Complete password reset using the verification code and new password
+      parameters:
+      - description: Token and New Password
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ResetPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Password reset successful
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid token or validation error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Reset password
       tags:
       - Auth
   /auth/signup:
@@ -250,6 +391,41 @@ paths:
               type: string
             type: object
       summary: Create a new user
+      tags:
+      - Auth
+  /auth/verify-email:
+    get:
+      consumes:
+      - application/json
+      description: Verifies user email using token from email link
+      parameters:
+      - description: Verification Token
+        in: query
+        name: token
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Email verified
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid or expired token
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Verify user email
       tags:
       - Auth
   /health/db:
@@ -489,7 +665,7 @@ paths:
       - Users
 securityDefinitions:
   Bearer:
-    description: Type "Bearer" followed by your JWT token.
+    description: Type "Bearer" followed by a space and JWT token.
     in: header
     name: Authorization
     type: apiKey
