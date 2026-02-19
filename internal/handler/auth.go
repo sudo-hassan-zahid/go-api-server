@@ -4,15 +4,14 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/auth"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/dto"
-	"github.com/sudo-hassan-zahid/go-api-server/internal/service"
 	"github.com/sudo-hassan-zahid/go-api-server/utils"
 )
 
 type AuthHandler struct {
-	service service.AuthService
+	service *auth.Service
 }
 
-func NewAuthHandler(s service.AuthService) *AuthHandler {
+func NewAuthHandler(s *auth.Service) *AuthHandler {
 	return &AuthHandler{service: s}
 }
 
@@ -23,7 +22,7 @@ func NewAuthHandler(s service.AuthService) *AuthHandler {
 // @Accept       json
 // @Produce      json
 // @Param        user body dto.CreateUserRequest true "User info"
-// @Success      201 {object} models.User "Created user"
+// @Success      201 {object} dto.SignupResponse "Created user"
 // @Failure      400 {object} map[string]string "Bad request / validation error"
 // @Failure      409 {object} map[string]string "Email already exists"
 // @Failure      429 {object} map[string]string "Too many requests"
@@ -39,7 +38,7 @@ func (h *AuthHandler) CreateUser(c *fiber.Ctx) error {
 		return nil
 	}
 
-	user, err := h.service.CreateUser(req.Email, req.Password, req.FirstName, req.LastName)
+	user, err := h.service.Register(req.Email, req.Password, req.FirstName, req.LastName)
 	if err != nil {
 		return err
 	}
@@ -62,14 +61,38 @@ func (h *AuthHandler) CreateUser(c *fiber.Ctx) error {
 	})
 }
 
+// VerifyEmail 	 godoc
+// @Summary      Verify user email
+// @Description  Verifies user email using token from email link
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        token query string true "Verification Token"
+// @Success      200 {object} map[string]string "Email verified"
+// @Failure      400 {object} map[string]string "Invalid or expired token"
+// @Failure      500 {object} map[string]string "Internal server error"
+// @Router       /auth/verify-email [get]
+func (h *AuthHandler) VerifyEmail(c *fiber.Ctx) error {
+	token := c.Query("token")
+	if token == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Token is required"})
+	}
+
+	if err := h.service.VerifyEmail(token); err != nil {
+		return err
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "Email verified successfully"})
+}
+
 // LoginUser 	 godoc
 // @Summary      Login an existing user
-// @Description  Logins an existing user using email and password
+// @Description  Authenticate user with email and password to get access and refresh tokens
 // @Tags         Auth
 // @Accept       json
 // @Produce      json
 // @Param        user body dto.LoginUserRequest true "User credentials"
-// @Success      200 {object} dto.LoginUserResponse "Login successful, returns user object"
+// @Success      200 {object} dto.LoginUserResponse "Login successful, returns tokens"
 // @Failure      400 {object} map[string]string "Bad request / validation error"
 // @Failure      401 {object} map[string]string "Invalid credentials"
 // @Failure      429 {object} map[string]string "Too many requests"
@@ -85,25 +108,139 @@ func (h *AuthHandler) LoginUser(c *fiber.Ctx) error {
 		return nil
 	}
 
-	user, err := h.service.LoginUser(req.Email, req.Password)
+	accessToken, refreshToken, err := h.service.Login(req.Email, req.Password)
 	if err != nil {
 		return err
 	}
 
-	accessToken, err := auth.GenerateAccessToken(user.ID.String(), user.Role)
-	if err != nil {
-		return err
-	}
-
-	refreshToken, err := auth.GenerateRefreshToken(user.ID.String(), user.Role)
-	if err != nil {
-		return err
-	}
+	claims, _ := auth.ValidateToken(accessToken)
 
 	return c.Status(fiber.StatusOK).JSON(dto.LoginUserResponse{
-		UserID:       user.ID.String(),
-		UserRole:     user.Role,
+		UserID:       claims.UserID,
+		UserRole:     claims.Role,
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	})
+}
+
+// RefreshToken 	godoc
+// @Summary      Refresh access token
+// @Description  Get a new access token using a valid refresh token
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        body body dto.RefreshTokenRequest true "Refresh Token"
+// @Success      200 {object} dto.RefreshTokenResponse "New tokens"
+// @Failure      400 {object} map[string]string "Bad request"
+// @Failure      401 {object} map[string]string "Invalid token"
+// @Failure      500 {object} map[string]string "Internal server error"
+// @Router       /auth/refresh [post]
+func (h *AuthHandler) RefreshToken(c *fiber.Ctx) error {
+	var req dto.RefreshTokenRequest
+	if err := c.BodyParser(&req); err != nil {
+		return err
+	}
+
+	if ok := utils.ValidateStruct(c, &req); !ok {
+		return nil
+	}
+
+	accessToken, refreshToken, err := h.service.RefreshToken(req.RefreshToken)
+	if err != nil {
+		return err
+	}
+
+	return c.Status(fiber.StatusOK).JSON(dto.RefreshTokenResponse{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	})
+}
+
+// ForgotPassword godoc
+// @Summary      Request password reset
+// @Description  Initiate password reset flow by sending a verification code to the user's email
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        body body dto.ForgotPasswordRequest true "Email"
+// @Success      200 {object} map[string]string "Email sent"
+// @Failure      400 {object} map[string]string "Validation error"
+// @Failure      500 {object} map[string]string "Internal server error"
+// @Router       /auth/forgot-password [post]
+func (h *AuthHandler) ForgotPassword(c *fiber.Ctx) error {
+	var req dto.ForgotPasswordRequest
+	if err := c.BodyParser(&req); err != nil {
+		return err
+	}
+
+	if ok := utils.ValidateStruct(c, &req); !ok {
+		return nil
+	}
+
+	if err := h.service.ForgotPassword(req.Email); err != nil {
+		return err
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "If the email exists, a reset link has been sent."})
+}
+
+// ResetPassword godoc
+// @Summary      Reset password
+// @Description  Complete password reset using the verification code and new password
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        body body dto.ResetPasswordRequest true "Token and New Password"
+// @Success      200 {object} map[string]string "Password reset successful"
+// @Failure      400 {object} map[string]string "Invalid token or validation error"
+// @Failure      500 {object} map[string]string "Internal server error"
+// @Router       /auth/reset-password [post]
+func (h *AuthHandler) ResetPassword(c *fiber.Ctx) error {
+	var req dto.ResetPasswordRequest
+	if err := c.BodyParser(&req); err != nil {
+		return err
+	}
+
+	if ok := utils.ValidateStruct(c, &req); !ok {
+		return nil
+	}
+
+	if err := h.service.ResetPassword(req.Token, req.NewPassword); err != nil {
+		return err
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "Password reset successfully"})
+}
+
+// Logout 		 godoc
+// @Summary      Logout
+// @Description  Invalidate access and refresh tokens. Requires Bearer token.
+// @Tags         Auth
+// @Security     Bearer
+// @Accept       json
+// @Produce      json
+// @Param        body body dto.LogoutRequest true "Refresh Token"
+// @Success      200 {object} map[string]string "Logged out"
+// @Failure      400 {object} map[string]string "Validation error"
+// @Failure      401 {object} map[string]string "Unauthorized"
+// @Failure      500 {object} map[string]string "Internal server error"
+// @Router       /auth/logout [post]
+func (h *AuthHandler) Logout(c *fiber.Ctx) error {
+	tokenString := c.Get("Authorization")
+	if len(tokenString) > 7 && tokenString[:7] == "Bearer " {
+		tokenString = tokenString[7:]
+	} else {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Missing or invalid token"})
+	}
+
+	var req dto.LogoutRequest
+	if err := c.BodyParser(&req); err == nil && req.RefreshToken != "" {
+		_ = h.service.InvalidateRefreshToken(req.RefreshToken)
+	}
+
+	if err := h.service.Logout("", tokenString); err != nil {
+		return err
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "Logged out successfully"})
 }

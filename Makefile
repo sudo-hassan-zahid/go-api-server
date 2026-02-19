@@ -8,6 +8,9 @@ build:
 	@echo "Starting Postgres container..."
 	$(DOCKER_COMPOSE) up --build -d
 	@echo "Waiting 5s for Postgres to be ready..."
+	@echo "Waiting 5s for Postgres to be ready..."
+	sleep 5
+	@echo "Waiting 5s for Redis to be ready..."
 	sleep 5
 	@echo "Generating swagger docs"
 	swag init -g ./cmd/main.go

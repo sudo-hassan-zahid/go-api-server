@@ -1,6 +1,9 @@
 package routes
 
 import (
+	"github.com/sudo-hassan-zahid/go-api-server/internal/auth"
+	"github.com/sudo-hassan-zahid/go-api-server/internal/config"
+	"github.com/sudo-hassan-zahid/go-api-server/internal/constants"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/handler"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/middleware"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/repository"
@@ -11,7 +14,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func Setup(app *fiber.App, db *gorm.DB) {
+func Setup(app *fiber.App, db *gorm.DB, cfg *config.Config) {
 	// CORS configuration
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: "*",
@@ -25,27 +28,33 @@ func Setup(app *fiber.App, db *gorm.DB) {
 	// Rate limiter
 	authRateLimiter := middleware.AuthRateLimiter()
 	publicRateLimiter := middleware.PublicRateLimiter()
+	loginRateLimiter := middleware.LoginRateLimiter()
 
 	// API group
 	api := app.Group("/api")
 
 	// Auth APIs
-	authRepo := repository.NewAuthRepository(db)
-	authService := service.NewAuthService(authRepo, db)
+	authRepo := repository.NewUserRepository(db)
+	authService := auth.NewService(authRepo, cfg.SMTP)
 	authHandler := handler.NewAuthHandler(authService)
-	auth := api.Group("/auth")
-	auth.Post("/signup", publicRateLimiter, authHandler.CreateUser)
-	auth.Post("/login", publicRateLimiter, authHandler.LoginUser)
+	authRoutes := api.Group("/auth")
+	authRoutes.Post("/signup", publicRateLimiter, authHandler.CreateUser)
+	authRoutes.Get("/verify-email", publicRateLimiter, authHandler.VerifyEmail)
+	authRoutes.Post("/login", loginRateLimiter, authHandler.LoginUser)
+	authRoutes.Post("/forgot-password", publicRateLimiter, authHandler.ForgotPassword)
+	authRoutes.Post("/reset-password", publicRateLimiter, authHandler.ResetPassword)
+	authRoutes.Post("/refresh", publicRateLimiter, authHandler.RefreshToken)
+	authRoutes.Post("/logout", jwt, authHandler.Logout)
 
 	// User APIs
 	userRepo := repository.NewUserRepository(db)
 	userService := service.NewUserService(userRepo, db)
 	userHandler := handler.NewUserHandler(userService)
-	users := api.Group("/users")
-	users.Get("/", jwt, authRateLimiter, userHandler.GetAllUsers)
-	users.Get("/:id", jwt, authRateLimiter, userHandler.GetUserByID)
-	users.Patch("/:id", jwt, authRateLimiter, userHandler.UpdateUser)
-	users.Delete("/:id", jwt, authRateLimiter, userHandler.DeleteUser)
+	userRoutes := api.Group("/users")
+	userRoutes.Get("/", jwt, authRateLimiter, userHandler.GetAllUsers)
+	userRoutes.Get("/:id", jwt, authRateLimiter, userHandler.GetUserByID)
+	userRoutes.Patch("/:id", jwt, authRateLimiter, userHandler.UpdateUser)
+	userRoutes.Delete("/:id", jwt, authRateLimiter, middleware.RBAC(constants.RoleAdmin), userHandler.DeleteUser)
 
 	// Public routes
 	publicHandler := handler.NewPublicHandler(db)

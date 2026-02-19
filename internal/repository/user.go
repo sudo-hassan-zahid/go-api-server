@@ -17,6 +17,8 @@ type UserRepository interface {
 	GetByID(id uuid.UUID) (*models.User, error)
 	GetAll() ([]models.User, error)
 	UpdateUser(id uuid.UUID, req dto.UpdateUserRequest) error
+	VerifyUser(id uuid.UUID) error
+	UpdatePassword(id uuid.UUID, password string) error
 	DeleteUser(id uuid.UUID) error
 }
 
@@ -110,5 +112,27 @@ func (r *userRepo) DeleteUser(id uuid.UUID) error {
 		return customerrors.ErrUserNotFound
 	}
 
+	return nil
+}
+
+func (r *userRepo) VerifyUser(id uuid.UUID) error {
+	result := r.db.Model(&models.User{}).Where("id = ?", id).Update("is_verified", true)
+	if result.Error != nil {
+		return customerrors.ParseDatabaseError(result.Error)
+	}
+	if result.RowsAffected == 0 {
+		return customErr.ErrUserNotFound
+	}
+	return nil
+}
+
+func (r *userRepo) UpdatePassword(id uuid.UUID, password string) error {
+	result := r.db.Model(&models.User{}).Where("id = ?", id).Update("password", password)
+	if result.Error != nil {
+		return customerrors.ParseDatabaseError(result.Error)
+	}
+	if result.RowsAffected == 0 {
+		return customErr.ErrUserNotFound
+	}
 	return nil
 }
