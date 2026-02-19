@@ -2,7 +2,11 @@ package auth
 
 import (
 	"context"
+	"fmt"
+	"time"
 
+	"github.com/google/uuid"
+	"github.com/sudo-hassan-zahid/go-api-server/internal/config"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/constants"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/database"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/errors"
@@ -12,11 +16,15 @@ import (
 )
 
 type Service struct {
-	userRepo repository.UserRepository
+	userRepo   repository.UserRepository
+	smtpConfig config.SMTPConfig
 }
 
-func NewService(userRepo repository.UserRepository) *Service {
-	return &Service{userRepo: userRepo}
+func NewService(userRepo repository.UserRepository, smtpConfig config.SMTPConfig) *Service {
+	return &Service{
+		userRepo:   userRepo,
+		smtpConfig: smtpConfig,
+	}
 }
 
 func (s *Service) Register(email, password, firstName, lastName string) (*models.User, error) {
@@ -37,7 +45,96 @@ func (s *Service) Register(email, password, firstName, lastName string) (*models
 		return nil, err
 	}
 
+	verificationToken := uuid.New().String()
+	if err := database.Rdb.Set(context.Background(), "verify_email:"+verificationToken, user.ID.String(), 24*time.Hour).Err(); err != nil {
+		fmt.Printf("Failed to store verification token: %v\n", err)
+	} else {
+		go func() {
+			if err := utils.SendVerificationEmail(user.Email, verificationToken, s.smtpConfig); err != nil {
+				fmt.Printf("Failed to send verification email: %v\n", err)
+			}
+		}()
+	}
+
 	return user, nil
+}
+
+func (s *Service) VerifyEmail(token string) error {
+	ctx := context.Background()
+	key := "verify_email:" + token
+
+	userID, err := database.Rdb.Get(ctx, key).Result()
+	if err != nil {
+		return errors.ErrTokenInvalid
+	}
+
+	uid, err := uuid.Parse(userID)
+	if err != nil {
+		return errors.ErrTokenInvalid
+	}
+
+	if err := s.userRepo.VerifyUser(uid); err != nil {
+		return err
+	}
+
+	database.Rdb.Del(ctx, key)
+
+	return nil
+}
+
+func (s *Service) ForgotPassword(email string) error {
+	user, err := s.userRepo.GetByEmail(email)
+	if err != nil {
+		// Don't reveal if user exists
+		return nil
+	}
+
+	// Generate 6-digit numeric token
+	token, err := utils.GenerateRandomCode(6)
+	if err != nil {
+		return err
+	}
+
+	// Store in Redis with 15m TTL (common for short codes)
+	if err := database.Rdb.Set(context.Background(), "reset_password:"+token, user.ID.String(), 15*time.Minute).Err(); err != nil {
+		return err
+	}
+
+	go func() {
+		_ = utils.SendPasswordResetEmail(user.Email, token, s.smtpConfig)
+	}()
+
+	return nil
+}
+
+func (s *Service) ResetPassword(token, newPassword string) error {
+	ctx := context.Background()
+	key := "reset_password:" + token
+
+	userID, err := database.Rdb.Get(ctx, key).Result()
+	if err != nil {
+		return errors.ErrTokenInvalid
+	}
+
+	hashedPassword, err := utils.HashPassword(newPassword)
+	if err != nil {
+		return err
+	}
+
+	uid, err := uuid.Parse(userID)
+	if err != nil {
+		return errors.ErrTokenInvalid
+	}
+
+	if err := s.userRepo.UpdatePassword(uid, hashedPassword); err != nil {
+		return err
+	}
+
+	database.Rdb.Del(ctx, key)
+	// Invalidate all sessions
+	s.LogoutAll(userID)
+
+	return nil
 }
 
 func (s *Service) Login(email, password string) (string, string, error) {

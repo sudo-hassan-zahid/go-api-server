@@ -61,6 +61,29 @@ func (h *AuthHandler) CreateUser(c *fiber.Ctx) error {
 	})
 }
 
+// VerifyEmail 	 godoc
+// @Summary      Verify user email
+// @Description  Verifies user email using token from email link
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        token query string true "Verification Token"
+// @Success      200 {object} map[string]string "Email verified"
+// @Failure      400 {object} map[string]string "Invalid token"
+// @Router       /auth/verify-email [get]
+func (h *AuthHandler) VerifyEmail(c *fiber.Ctx) error {
+	token := c.Query("token")
+	if token == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Token is required"})
+	}
+
+	if err := h.service.VerifyEmail(token); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid or expired token"})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "Email verified successfully"})
+}
+
 // LoginUser 	 godoc
 // @Summary      Login an existing user
 // @Description  Logins an existing user using email and password
@@ -129,6 +152,60 @@ func (h *AuthHandler) RefreshToken(c *fiber.Ctx) error {
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	})
+}
+
+// ForgotPassword godoc
+// @Summary      Request password reset
+// @Description  Sends a password reset link to the user's email
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        body body dto.ForgotPasswordRequest true "Email"
+// @Success      200 {object} map[string]string "Email sent"
+// @Failure      400 {object} map[string]string "Bad request"
+// @Router       /auth/forgot-password [post]
+func (h *AuthHandler) ForgotPassword(c *fiber.Ctx) error {
+	var req dto.ForgotPasswordRequest
+	if err := c.BodyParser(&req); err != nil {
+		return err
+	}
+
+	if ok := utils.ValidateStruct(c, &req); !ok {
+		return nil
+	}
+
+	if err := h.service.ForgotPassword(req.Email); err != nil {
+		return err
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "If the email exists, a reset link has been sent."})
+}
+
+// ResetPassword godoc
+// @Summary      Reset password
+// @Description  Resets user password using token
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        body body dto.ResetPasswordRequest true "Token and New Password"
+// @Success      200 {object} map[string]string "Password reset successful"
+// @Failure      400 {object} map[string]string "Bad request"
+// @Router       /auth/reset-password [post]
+func (h *AuthHandler) ResetPassword(c *fiber.Ctx) error {
+	var req dto.ResetPasswordRequest
+	if err := c.BodyParser(&req); err != nil {
+		return err
+	}
+
+	if ok := utils.ValidateStruct(c, &req); !ok {
+		return nil
+	}
+
+	if err := h.service.ResetPassword(req.Token, req.NewPassword); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid or expired token"})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "Password reset successfully"})
 }
 
 // Logout 		 godoc

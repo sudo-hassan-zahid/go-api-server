@@ -38,11 +38,20 @@ type RedisConfig struct {
 	DB       int
 }
 
+type SMTPConfig struct {
+	Host     string
+	Port     int
+	User     string
+	Password string
+	From     string
+}
+
 type Config struct {
 	App   AppConfig
 	DB    DBConfig
 	Redis RedisConfig
 	Log   LogConfig
+	SMTP  SMTPConfig
 }
 
 func Load() (*Config, error) {
@@ -74,6 +83,13 @@ func Load() (*Config, error) {
 		},
 		Log: LogConfig{
 			Level: getEnv("LOG_LEVEL", "debug"),
+		},
+		SMTP: SMTPConfig{
+			Host:     getEnv("SMTP_HOST", "smtp.mailtrap.io"),
+			Port:     getEnvAsInt("SMTP_PORT", 2525),
+			User:     getEnv("SMTP_USER", ""),
+			Password: getEnv("SMTP_PASSWORD", ""),
+			From:     getEnv("SMTP_FROM", "noreply@example.com"),
 		},
 	}
 

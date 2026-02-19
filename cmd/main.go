@@ -78,7 +78,7 @@ func run() error {
 	auth.Init(cfg)
 
 	// Route setup
-	routes.Setup(app, db)
+	routes.Setup(app, db, cfg)
 
 	// Swagger
 	app.Get("/swagger/*", swagger.FiberWrapHandler())
