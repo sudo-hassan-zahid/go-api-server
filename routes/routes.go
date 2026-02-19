@@ -28,6 +28,7 @@ func Setup(app *fiber.App, db *gorm.DB, cfg *config.Config) {
 	// Rate limiter
 	authRateLimiter := middleware.AuthRateLimiter()
 	publicRateLimiter := middleware.PublicRateLimiter()
+	loginRateLimiter := middleware.LoginRateLimiter()
 
 	// API group
 	api := app.Group("/api")
@@ -39,7 +40,7 @@ func Setup(app *fiber.App, db *gorm.DB, cfg *config.Config) {
 	authRoutes := api.Group("/auth")
 	authRoutes.Post("/signup", publicRateLimiter, authHandler.CreateUser)
 	authRoutes.Get("/verify-email", publicRateLimiter, authHandler.VerifyEmail)
-	authRoutes.Post("/login", publicRateLimiter, authHandler.LoginUser)
+	authRoutes.Post("/login", loginRateLimiter, authHandler.LoginUser)
 	authRoutes.Post("/forgot-password", publicRateLimiter, authHandler.ForgotPassword)
 	authRoutes.Post("/reset-password", publicRateLimiter, authHandler.ResetPassword)
 	authRoutes.Post("/refresh", publicRateLimiter, authHandler.RefreshToken)
