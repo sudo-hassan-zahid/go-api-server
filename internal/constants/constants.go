@@ -1,7 +1,7 @@
 package constants
 
 const (
-	ENV_LOCAL = "local"
-	ENV_DEV   = "dev"
-	ENV_PROD  = "prod"
+	ENV_DEVELOPMENT = "development"
+	ENV_STAGING     = "staging"
+	ENV_PRODUCTION  = "production"
 )

@@ -6,10 +6,13 @@ definitions:
         example: user@example.com
         type: string
       first_name:
+        example: John
         type: string
       last_name:
+        example: Doe
         type: string
       password:
+        example: password123
         minLength: 8
         type: string
     required:
@@ -21,8 +24,10 @@ definitions:
   dto.LoginUserRequest:
     properties:
       email:
+        example: user@example.com
         type: string
       password:
+        example: password123
         minLength: 8
         type: string
     required:
@@ -38,6 +43,26 @@ definitions:
       user_id:
         type: string
       user_role:
+        type: string
+    type: object
+  dto.SuccessResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  dto.UpdateUserRequest:
+    properties:
+      email:
+        example: user@example.com
+        type: string
+      first_name:
+        type: string
+      last_name:
+        type: string
+      role:
+        enum:
+        - user
+        - admin
         type: string
     type: object
   models.User:
@@ -97,6 +122,12 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "429":
+          description: Too many requests
+          schema:
+            additionalProperties:
+              type: string
+            type: object
         "500":
           description: Internal server error
           schema:
@@ -137,6 +168,12 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "429":
+          description: Too many requests
+          schema:
+            additionalProperties:
+              type: string
+            type: object
         "500":
           description: Internal server error
           schema:
@@ -146,7 +183,34 @@ paths:
       summary: Create a new user
       tags:
       - Auth
-  /health:
+  /health/db:
+    get:
+      consumes:
+      - application/json
+      description: Checks if the database is up and running
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "429":
+          description: Too many requests
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "503":
+          description: Service Unavailable
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Health check database
+      tags:
+      - Health
+  /health/server:
     get:
       consumes:
       - application/json
@@ -159,7 +223,13 @@ paths:
           schema:
             additionalProperties: true
             type: object
-      summary: Health check
+        "429":
+          description: Too many requests
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Health check server
       tags:
       - Health
   /users:
@@ -176,6 +246,12 @@ paths:
             items:
               $ref: '#/definitions/models.User'
             type: array
+        "429":
+          description: Too many requests
+          schema:
+            additionalProperties:
+              type: string
+            type: object
         "500":
           description: Internal server error
           schema:
@@ -183,11 +259,59 @@ paths:
               type: string
             type: object
       security:
-      - BearerAuth: []
+      - Bearer: []
       summary: Get all users
       tags:
       - Users
   /users/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes a user with given ID
+      parameters:
+      - description: User UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User deleted successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad request / validation error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "429":
+          description: Too many requests
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Delete a user
+      tags:
+      - Users
     get:
       consumes:
       - application/json
@@ -217,6 +341,12 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "429":
+          description: Too many requests
+          schema:
+            additionalProperties:
+              type: string
+            type: object
         "500":
           description: Internal server error
           schema:
@@ -224,12 +354,64 @@ paths:
               type: string
             type: object
       security:
-      - BearerAuth: []
+      - Bearer: []
       summary: Get user by ID
       tags:
       - Users
+    patch:
+      consumes:
+      - application/json
+      description: Updates a user with given ID
+      parameters:
+      - description: User UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: User info
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User updated successfully
+          schema:
+            $ref: '#/definitions/dto.SuccessResponse'
+        "400":
+          description: Bad request / validation error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "429":
+          description: Too many requests
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Update a user
+      tags:
+      - Users
 securityDefinitions:
-  BearerAuth:
+  Bearer:
     description: Type "Bearer" followed by your JWT token.
     in: header
     name: Authorization

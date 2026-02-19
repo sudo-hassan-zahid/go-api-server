@@ -22,6 +22,10 @@ func Setup(app *fiber.App, db *gorm.DB) {
 	// JWT auth
 	jwt := middleware.JWTMiddleware()
 
+	// Rate limiter
+	authRateLimiter := middleware.AuthRateLimiter()
+	publicRateLimiter := middleware.PublicRateLimiter()
+
 	// API group
 	api := app.Group("/api")
 
@@ -30,18 +34,21 @@ func Setup(app *fiber.App, db *gorm.DB) {
 	authService := service.NewAuthService(authRepo, db)
 	authHandler := handler.NewAuthHandler(authService)
 	auth := api.Group("/auth")
-	auth.Post("/signup", authHandler.CreateUser)
-	auth.Post("/login", authHandler.LoginUser)
+	auth.Post("/signup", publicRateLimiter, authHandler.CreateUser)
+	auth.Post("/login", publicRateLimiter, authHandler.LoginUser)
 
 	// User APIs
 	userRepo := repository.NewUserRepository(db)
 	userService := service.NewUserService(userRepo, db)
 	userHandler := handler.NewUserHandler(userService)
 	users := api.Group("/users")
-	users.Get("/", jwt, userHandler.GetAllUsers)
-	users.Get("/:id", jwt, userHandler.GetUserByID)
+	users.Get("/", jwt, authRateLimiter, userHandler.GetAllUsers)
+	users.Get("/:id", jwt, authRateLimiter, userHandler.GetUserByID)
+	users.Patch("/:id", jwt, authRateLimiter, userHandler.UpdateUser)
+	users.Delete("/:id", jwt, authRateLimiter, userHandler.DeleteUser)
 
 	// Public routes
-	publicHandler := handler.NewPublicHandler()
-	api.Get("/health", publicHandler.HealthCheck)
+	publicHandler := handler.NewPublicHandler(db)
+	api.Get("/health/server", publicRateLimiter, publicHandler.HealthCheckServer)
+	api.Get("/health/db", publicRateLimiter, publicHandler.HealthCheckDB)
 }

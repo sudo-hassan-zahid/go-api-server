@@ -6,41 +6,46 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-var (
-	ErrUserNotFound       = errors.New("user not found")
-	ErrInvalidCredentials = errors.New("invalid credentials")
-	ErrEmailAlreadyExists = errors.New("email already exists")
-	ErrUnauthorized       = errors.New("unauthorized")
-	ErrForbidden          = errors.New("forbidden")
-	ErrBadRequest         = errors.New("bad request")
-	ErrInternalServer     = errors.New("internal server error")
-	ErrTokenInvalid       = errors.New("invalid or expired token")
-)
-
 type AppError struct {
-	Code    int    `json:"-"`
-	Message string `json:"message"`
+	Err        error
+	HTTPStatus int
+	Message    string
 }
 
-func SendError(c *fiber.Ctx, code int, message string) error {
-	return c.Status(code).JSON(fiber.Map{"error": message})
+func (e *AppError) Error() string {
+	return e.Err.Error()
 }
 
-func HandleError(c *fiber.Ctx, err error) error {
-	switch err {
-	case ErrUserNotFound:
-		return SendError(c, fiber.StatusNotFound, err.Error())
-	case ErrInvalidCredentials:
-		return SendError(c, fiber.StatusUnauthorized, err.Error())
-	case ErrEmailAlreadyExists:
-		return SendError(c, fiber.StatusBadRequest, err.Error())
-	case ErrUnauthorized:
-		return SendError(c, fiber.StatusUnauthorized, err.Error())
-	case ErrForbidden:
-		return SendError(c, fiber.StatusForbidden, err.Error())
-	case ErrBadRequest:
-		return SendError(c, fiber.StatusBadRequest, err.Error())
-	default:
-		return SendError(c, fiber.StatusInternalServerError, ErrInternalServer.Error())
+func (e *AppError) Unwrap() error {
+	return e.Err
+}
+
+func New(err error, status int, message string) *AppError {
+	return &AppError{
+		Err:        err,
+		HTTPStatus: status,
+		Message:    message,
 	}
 }
+
+// App errors
+var (
+	ErrTokenInvalid       = New(errors.New("invalid token"), fiber.StatusUnauthorized, "invalid token")
+	ErrUserNotFound       = New(errors.New("user not found"), fiber.StatusNotFound, "user not found")
+	ErrUserAlreadyExists  = New(errors.New("user already exists"), fiber.StatusConflict, "user already exists")
+	ErrInvalidCredentials = New(errors.New("invalid credentials"), fiber.StatusUnauthorized, "invalid credentials")
+	ErrUnauthorized       = New(errors.New("unauthorized"), fiber.StatusUnauthorized, "unauthorized")
+	ErrValidationFailed   = New(errors.New("validation failed"), fiber.StatusBadRequest, "validation failed")
+	ErrServiceUnavailable = New(errors.New("service temporarily unavailable"), fiber.StatusServiceUnavailable, "service temporarily unavailable")
+)
+
+// DB errors
+var (
+	ErrDuplicateKey        = New(errors.New("duplicate key"), fiber.StatusConflict, "resource already exists")
+	ErrForeignKeyViolation = New(errors.New("foreign key violation"), fiber.StatusBadRequest, "referenced resource does not exist")
+	ErrNotNullViolation    = New(errors.New("not null violation"), fiber.StatusBadRequest, "required field cannot be empty")
+	ErrRecordNotFound      = New(errors.New("record not found"), fiber.StatusNotFound, "resource not found")
+	ErrDatabaseTimeout     = New(errors.New("database timeout"), fiber.StatusRequestTimeout, "database operation timed out")
+	ErrConnectionFailed    = New(errors.New("connection failed"), fiber.StatusServiceUnavailable, "database temporarily unavailable")
+	ErrDeadlockDetected    = New(errors.New("deadlock detected"), fiber.StatusConflict, "database conflict, please try again")
+)
