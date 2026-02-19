@@ -403,6 +403,15 @@ const docTemplate = `{
                             }
                         }
                     },
+                    "404": {
+                        "description": "User not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
                     "429": {
                         "description": "Too many requests",
                         "schema": {
@@ -462,7 +471,10 @@ const docTemplate = `{
                     "200": {
                         "description": "User updated successfully",
                         "schema": {
-                            "$ref": "#/definitions/dto.SuccessResponse"
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     },
                     "400": {
@@ -565,14 +577,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "user_role": {
-                    "type": "string"
-                }
-            }
-        },
-        "dto.SuccessResponse": {
-            "type": "object",
-            "properties": {
-                "message": {
                     "type": "string"
                 }
             }

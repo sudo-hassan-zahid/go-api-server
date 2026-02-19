@@ -75,7 +75,7 @@ func (h *UserHandler) GetUserByID(c *fiber.Ctx) error {
 // @Produce      json
 // @Param        id path string true "User UUID"
 // @Param        user body dto.UpdateUserRequest true "User info"
-// @Success      200 {object} dto.SuccessResponse "User updated successfully"
+// @Success      200 {object} map[string]string "User updated successfully"
 // @Failure      400 {object} map[string]string "Bad request / validation error"
 // @Failure      401 {object} map[string]string "Unauthorized"
 // @Failure      429 {object} map[string]string "Too many requests"
@@ -126,9 +126,35 @@ func (h *UserHandler) UpdateUser(c *fiber.Ctx) error {
 // @Success      200 {object} map[string]string "User deleted successfully"
 // @Failure      400 {object} map[string]string "Bad request / validation error"
 // @Failure      401 {object} map[string]string "Unauthorized"
+// @Failure      404 {object} map[string]string "User not found"
 // @Failure      429 {object} map[string]string "Too many requests"
 // @Failure      500 {object} map[string]string "Internal server error"
 // @Router       /users/{id} [delete]
 func (h *UserHandler) DeleteUser(c *fiber.Ctx) error {
-	panic("not implemented")
+	userID := strings.TrimSpace(c.Params("id"))
+	if userID == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "user id is required",
+		})
+	}
+
+	id, err := uuid.Parse(userID)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "invalid user id format",
+		})
+	}
+
+	_, err = h.service.GetUserByID(id)
+	if err != nil {
+		return err
+	}
+
+	err = h.service.DeleteUser(id)
+	if err != nil {
+		return err
+	}
+	return c.JSON(fiber.Map{
+		"message": "User deleted successfully",
+	})
 }
