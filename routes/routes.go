@@ -15,49 +15,65 @@ import (
 )
 
 func Setup(app *fiber.App, db *gorm.DB, cfg *config.Config) {
-	// CORS configuration
+	deps := newDependencies(db, cfg)
+
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: "*",
 		AllowMethods: "GET,POST,PUT,PATCH,DELETE,OPTIONS",
 		AllowHeaders: "Origin, Content-Type, Accept, Authorization",
 	}))
 
-	// JWT auth
-	jwt := middleware.JWTMiddleware()
-
-	// Rate limiter
-	authRateLimiter := middleware.AuthRateLimiter()
-	publicRateLimiter := middleware.PublicRateLimiter()
-	loginRateLimiter := middleware.LoginRateLimiter()
-
-	// API group
 	api := app.Group("/api")
 
-	// Auth APIs
-	authRepo := repository.NewUserRepository(db)
-	authService := auth.NewService(authRepo, cfg.SMTP)
-	authHandler := handler.NewAuthHandler(authService)
-	authRoutes := api.Group("/auth")
-	authRoutes.Post("/signup", publicRateLimiter, authHandler.CreateUser)
-	authRoutes.Get("/verify-email", publicRateLimiter, authHandler.VerifyEmail)
-	authRoutes.Post("/login", loginRateLimiter, authHandler.LoginUser)
-	authRoutes.Post("/forgot-password", publicRateLimiter, authHandler.ForgotPassword)
-	authRoutes.Post("/reset-password", publicRateLimiter, authHandler.ResetPassword)
-	authRoutes.Post("/refresh", publicRateLimiter, authHandler.RefreshToken)
-	authRoutes.Post("/logout", jwt, authHandler.Logout)
+	registerAuthRoutes(api, deps)
+	registerUserRoutes(api, deps)
+	registerPublicRoutes(api, deps)
+}
 
-	// User APIs
+type dependencies struct {
+	jwt               fiber.Handler
+	authRateLimiter   fiber.Handler
+	publicRateLimiter fiber.Handler
+	loginRateLimiter  fiber.Handler
+	authHandler       *handler.AuthHandler
+	userHandler       *handler.UserHandler
+	publicHandler     *handler.PublicHandler
+}
+
+func newDependencies(db *gorm.DB, cfg *config.Config) dependencies {
 	userRepo := repository.NewUserRepository(db)
-	userService := service.NewUserService(userRepo, db)
-	userHandler := handler.NewUserHandler(userService)
-	userRoutes := api.Group("/users")
-	userRoutes.Get("/", jwt, authRateLimiter, userHandler.GetAllUsers)
-	userRoutes.Get("/:id", jwt, authRateLimiter, userHandler.GetUserByID)
-	userRoutes.Patch("/:id", jwt, authRateLimiter, userHandler.UpdateUser)
-	userRoutes.Delete("/:id", jwt, authRateLimiter, middleware.RBAC(constants.RoleAdmin), userHandler.DeleteUser)
 
-	// Public routes
-	publicHandler := handler.NewPublicHandler(db)
-	api.Get("/health/server", publicRateLimiter, publicHandler.HealthCheckServer)
-	api.Get("/health/db", publicRateLimiter, publicHandler.HealthCheckDB)
+	return dependencies{
+		jwt:               middleware.JWTMiddleware(),
+		authRateLimiter:   middleware.AuthRateLimiter(),
+		publicRateLimiter: middleware.PublicRateLimiter(),
+		loginRateLimiter:  middleware.LoginRateLimiter(),
+		authHandler:       handler.NewAuthHandler(auth.NewService(userRepo, cfg.SMTP)),
+		userHandler:       handler.NewUserHandler(service.NewUserService(userRepo, db)),
+		publicHandler:     handler.NewPublicHandler(db),
+	}
+}
+
+func registerAuthRoutes(api fiber.Router, deps dependencies) {
+	authRoutes := api.Group("/auth")
+	authRoutes.Post("/signup", deps.publicRateLimiter, deps.authHandler.CreateUser)
+	authRoutes.Get("/verify-email", deps.publicRateLimiter, deps.authHandler.VerifyEmail)
+	authRoutes.Post("/login", deps.loginRateLimiter, deps.authHandler.LoginUser)
+	authRoutes.Post("/forgot-password", deps.publicRateLimiter, deps.authHandler.ForgotPassword)
+	authRoutes.Post("/reset-password", deps.publicRateLimiter, deps.authHandler.ResetPassword)
+	authRoutes.Post("/refresh", deps.publicRateLimiter, deps.authHandler.RefreshToken)
+	authRoutes.Post("/logout", deps.jwt, deps.authHandler.Logout)
+}
+
+func registerUserRoutes(api fiber.Router, deps dependencies) {
+	userRoutes := api.Group("/users")
+	userRoutes.Get("/", deps.jwt, deps.authRateLimiter, deps.userHandler.GetAllUsers)
+	userRoutes.Get("/:id", deps.jwt, deps.authRateLimiter, deps.userHandler.GetUserByID)
+	userRoutes.Patch("/:id", deps.jwt, deps.authRateLimiter, deps.userHandler.UpdateUser)
+	userRoutes.Delete("/:id", deps.jwt, deps.authRateLimiter, middleware.RBAC(constants.RoleAdmin), deps.userHandler.DeleteUser)
+}
+
+func registerPublicRoutes(api fiber.Router, deps dependencies) {
+	api.Get("/health/server", deps.publicRateLimiter, deps.publicHandler.HealthCheckServer)
+	api.Get("/health/db", deps.publicRateLimiter, deps.publicHandler.HealthCheckDB)
 }
