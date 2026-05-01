@@ -49,7 +49,11 @@ cd go-api-server
 
 ### 2. Environment Setup
 
-The repository includes a Docker-ready `.env` file. Update it if you need different local credentials or ports.
+The repository includes a Docker-ready `.env.example` file. Copy it to `.env` and update values if you need different local credentials, ports, or secrets.
+
+```bash
+cp .env.example .env
+```
 
 ### 3. Running with Docker
 
@@ -69,6 +73,14 @@ Docker Compose runs this as one application named `go-api-server` with three con
 
 Postgres is only available inside the Docker Compose network at `postgres:5432`; it is not published to your host machine, so it will not collide with any local database ports. Redis is also kept inside the Compose network at `redis:6379`.
 
+The app container includes a healthcheck against `/api/health/server`.
+
+Stop the stack:
+
+```bash
+docker compose down
+```
+
 ## API Documentation
 
 Swagger documentation is automatically generated. Once the server is running, you can access the interactive UI at:
@@ -80,30 +92,6 @@ To regenerate the documentation after making changes to the API definitions, run
 ```bash
 make swagger
 ```
-
-## API Endpoints Summary
-
-### Authentication
-
-- POST /api/auth/signup: Register a new user
-- POST /api/auth/login: Authenticate and receive JWT
-- GET /api/auth/verify-email: Verify email via token
-- POST /api/auth/forgot-password: Initiate password recovery
-- POST /api/auth/reset-password: Reset password with token
-- POST /api/auth/refresh: Refresh expired JWT tokens
-- POST /api/auth/logout: Invalidate current session
-
-### User Management
-
-- GET /api/users: List all users (Protected)
-- GET /api/users/:id: Get specific user details (Protected)
-- PATCH /api/users/:id: Update user information (Protected)
-- DELETE /api/users/:id: Remove user (Admin Only)
-
-### Health Checks
-
-- GET /api/health/server: Check application status
-- GET /api/health/db: Check database connectivity
 
 ## Project Structure
 
