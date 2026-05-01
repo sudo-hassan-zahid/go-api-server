@@ -53,13 +53,19 @@ The repository includes a Docker-ready `.env` file. Update it if you need differ
 
 ### 3. Running with Docker
 
-Start the full stack, including the Go app, Postgres, and Redis:
+Start the full Docker stack, including the Go app, Postgres, and Redis:
 
 ```bash
 docker compose up --build
 ```
 
 The API will be available at `http://localhost:8080`.
+
+Docker Compose runs this as one application named `go-api-server` with three containers:
+
+- `go-api-server`: the Go API container.
+- `go-api-server-postgres`: the private Postgres container.
+- `go-api-server-redis`: the private Redis container.
 
 Postgres is only available inside the Docker Compose network at `postgres:5432`; it is not published to your host machine, so it will not collide with any local database ports. Redis is also kept inside the Compose network at `redis:6379`.
 

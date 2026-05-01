@@ -1,5 +1,8 @@
+name: go-api-server
+
 services:
   app:
+    container_name: go-api-server
     build:
       context: .
       dockerfile: Dockerfile
@@ -13,8 +16,13 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    networks:
+      api_private:
+        aliases:
+          - app
 
   postgres:
+    container_name: go-api-server-postgres
     image: postgres:16
     restart: unless-stopped
     environment:
@@ -28,8 +36,13 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      api_private:
+        aliases:
+          - postgres
 
   redis:
+    container_name: go-api-server-redis
     image: redis:7
     restart: unless-stopped
     volumes:
@@ -39,7 +52,15 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      api_private:
+        aliases:
+          - redis
 
 volumes:
   db_data:
   redis_data:
+
+networks:
+  api_private:
+    name: go-api-server-private
