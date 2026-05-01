@@ -18,7 +18,6 @@ import (
 	"github.com/sudo-hassan-zahid/go-api-server/internal/handler"
 	appLogger "github.com/sudo-hassan-zahid/go-api-server/internal/logger"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/middleware"
-	"github.com/sudo-hassan-zahid/go-api-server/internal/models"
 	"github.com/sudo-hassan-zahid/go-api-server/routes"
 	swagger "github.com/swaggo/fiber-swagger"
 )
@@ -63,7 +62,8 @@ func run() error {
 
 	// Initialize Database
 	if cfg.App.Environment == constants.ENV_DEVELOPMENT {
-		if err := db.AutoMigrate(&models.User{}); err != nil {
+		shouldSeed := os.Getenv("SEED_DB") == "true"
+		if err := database.Setup(db, shouldSeed); err != nil {
 			return err
 		}
 	}
