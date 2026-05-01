@@ -38,6 +38,8 @@ services:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5500:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
     healthcheck:
@@ -54,6 +56,8 @@ services:
     container_name: go-api-server-redis
     image: redis:7
     restart: unless-stopped
+    ports:
+      - "6500:6379"
     volumes:
       - redis_data:/data
     healthcheck:
