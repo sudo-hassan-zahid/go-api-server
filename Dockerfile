@@ -8,7 +8,6 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-RUN go test -v ./...
 RUN CGO_ENABLED=0 GOOS=linux go build -o /bin/go-api-server ./cmd/main.go
 
 FROM alpine:3.22

@@ -1,8 +1,5 @@
 .git
 .gitignore
-.dockerignore
-Dockerfile
-docker-compose.yml
 
 tmp/
 bin/
@@ -14,3 +11,12 @@ dist/
 coverage.*
 *.coverprofile
 profile.cov
+
+.env
+.env.*
+!.env.example
+
+README.md
+Makefile
+docs/
+tests/
