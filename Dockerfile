@@ -8,18 +8,19 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
+RUN go test -v ./...
+RUN CGO_ENABLED=0 GOOS=linux go build -o /bin/go-api-server ./cmd/main.go
 
-RUN go test -v ./... || exit 1
+FROM alpine:3.22
 
-RUN go build -o main cmd/main.go
+WORKDIR /app
 
-FROM alpine:latest
+RUN addgroup -S app && adduser -S app -G app
 
-WORKDIR /root/
+COPY --from=builder /bin/go-api-server /usr/local/bin/go-api-server
 
-COPY --from=builder /app/main .
-COPY --from=builder /app/.env.example .env
+USER app
 
 EXPOSE 8080
 
-CMD ["./main"]
+CMD ["go-api-server"]

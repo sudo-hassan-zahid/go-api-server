@@ -49,23 +49,11 @@ cd go-api-server
 
 ### 2. Environment Setup
 
-Copy the example environment file and update it with your configuration:
+The repository includes a Docker-ready `.env` file. Update it if you need different local credentials or ports.
 
-```bash
-cp .env.example .env
-```
+### 3. Running with Docker
 
-Key configuration parameters include database credentials, JWT secret, and SMTP settings for email.
-
-### 3. Running with Docker (Recommended)
-
-The easiest way to start the entire stack including the database and Go server is using the provided Makefile command:
-
-```bash
-make build
-```
-
-Alternatively, use Docker Compose directly:
+Start the full stack, including the Go app, Postgres, and Redis:
 
 ```bash
 docker compose up --build
@@ -73,19 +61,7 @@ docker compose up --build
 
 The API will be available at `http://localhost:8080`.
 
-### 4. Running Locally
-
-If you prefer to run the Go server outside of Docker while keeping the database in a container:
-
-1. Start the database:
-   ```bash
-   docker compose up -d db redis
-   ```
-
-2. Run the application:
-   ```bash
-   go run ./cmd/main.go
-   ```
+Postgres is only available inside the Docker Compose network at `postgres:5432`; it is not published to your host machine, so it will not collide with any local database ports. Redis is also kept inside the Compose network at `redis:6379`.
 
 ## API Documentation
 
@@ -102,6 +78,7 @@ make swagger
 ## API Endpoints Summary
 
 ### Authentication
+
 - POST /api/auth/signup: Register a new user
 - POST /api/auth/login: Authenticate and receive JWT
 - GET /api/auth/verify-email: Verify email via token
@@ -111,12 +88,14 @@ make swagger
 - POST /api/auth/logout: Invalidate current session
 
 ### User Management
+
 - GET /api/users: List all users (Protected)
 - GET /api/users/:id: Get specific user details (Protected)
 - PATCH /api/users/:id: Update user information (Protected)
 - DELETE /api/users/:id: Remove user (Admin Only)
 
 ### Health Checks
+
 - GET /api/health/server: Check application status
 - GET /api/health/db: Check database connectivity
 
