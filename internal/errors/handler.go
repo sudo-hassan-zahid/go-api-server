@@ -2,7 +2,6 @@ package errors
 
 import (
 	"errors"
-	"log"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -26,8 +25,6 @@ func (h *ErrorHandler) Handle(err error) (int, ErrorResponse) {
 	}
 
 	err = ParseDatabaseError(err)
-
-	log.Println("ERROR:", err)
 
 	var appErr *AppError
 	if errors.As(err, &appErr) {
