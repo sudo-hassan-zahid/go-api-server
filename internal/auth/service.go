@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -13,6 +14,12 @@ import (
 	"github.com/sudo-hassan-zahid/go-api-server/internal/models"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/repository"
 	"github.com/sudo-hassan-zahid/go-api-server/utils"
+)
+
+const (
+	emailVerificationTokenTTL = 24 * time.Hour
+	passwordResetTokenTTL     = 15 * time.Minute
+	maxRefreshSessions        = 5
 )
 
 type Service struct {
@@ -46,7 +53,7 @@ func (s *Service) Register(email, password, firstName, lastName string) (*models
 	}
 
 	verificationToken := uuid.New().String()
-	if err := database.Rdb.Set(context.Background(), "verify_email:"+verificationToken, user.ID.String(), 24*time.Hour).Err(); err != nil {
+	if err := database.Rdb.Set(context.Background(), verifyEmailKey(verificationToken), user.ID.String(), emailVerificationTokenTTL).Err(); err != nil {
 		logger.Log.Error().Err(err).Msg("Failed to store verification token")
 	} else {
 		go func() {
@@ -61,7 +68,7 @@ func (s *Service) Register(email, password, firstName, lastName string) (*models
 
 func (s *Service) VerifyEmail(token string) error {
 	ctx := context.Background()
-	key := "verify_email:" + token
+	key := verifyEmailKey(token)
 
 	userID, err := database.Rdb.Get(ctx, key).Result()
 	if err != nil {
@@ -77,7 +84,7 @@ func (s *Service) VerifyEmail(token string) error {
 		return err
 	}
 
-	database.Rdb.Del(ctx, key)
+	_ = database.Rdb.Del(ctx, key).Err()
 
 	return nil
 }
@@ -93,7 +100,7 @@ func (s *Service) ForgotPassword(email string) error {
 		return err
 	}
 
-	if err := database.Rdb.Set(context.Background(), "reset_password:"+token, user.ID.String(), 15*time.Minute).Err(); err != nil {
+	if err := database.Rdb.Set(context.Background(), resetPasswordKey(token), user.ID.String(), passwordResetTokenTTL).Err(); err != nil {
 		return err
 	}
 
@@ -106,7 +113,7 @@ func (s *Service) ForgotPassword(email string) error {
 
 func (s *Service) ResetPassword(token, newPassword string) error {
 	ctx := context.Background()
-	key := "reset_password:" + token
+	key := resetPasswordKey(token)
 
 	userID, err := database.Rdb.Get(ctx, key).Result()
 	if err != nil {
@@ -127,7 +134,7 @@ func (s *Service) ResetPassword(token, newPassword string) error {
 		return err
 	}
 
-	database.Rdb.Del(ctx, key)
+	_ = database.Rdb.Del(ctx, key).Err()
 
 	s.LogoutAll(userID)
 
@@ -167,14 +174,14 @@ func (s *Service) Login(email, password string) (string, string, error) {
 
 func (s *Service) handleMaxLogins(userID string) error {
 	ctx := context.Background()
-	key := "sessions:" + userID
+	key := sessionsKey(userID)
 
 	count, err := database.Rdb.LLen(ctx, key).Result()
 	if err != nil {
 		return err
 	}
 
-	if count >= 5 {
+	if count >= maxRefreshSessions {
 		oldestToken, err := database.Rdb.LPop(ctx, key).Result()
 		if err != nil {
 			return err
@@ -186,8 +193,7 @@ func (s *Service) handleMaxLogins(userID string) error {
 }
 
 func (s *Service) storeSession(userID, refreshToken string) error {
-	key := "sessions:" + userID
-	return database.Rdb.RPush(context.Background(), key, refreshToken).Err()
+	return database.Rdb.RPush(context.Background(), sessionsKey(userID), refreshToken).Err()
 }
 
 func (s *Service) Logout(userID, tokenString string) error {
@@ -200,7 +206,7 @@ func (s *Service) Logout(userID, tokenString string) error {
 
 func (s *Service) LogoutAll(userID string) error {
 	ctx := context.Background()
-	key := "sessions:" + userID
+	key := sessionsKey(userID)
 
 	tokens, err := database.Rdb.LRange(ctx, key, 0, -1).Result()
 	if err != nil {
@@ -221,7 +227,7 @@ func (s *Service) RefreshToken(refreshToken string) (string, string, error) {
 	}
 
 	ctx := context.Background()
-	key := "sessions:" + claims.UserID
+	key := sessionsKey(claims.UserID)
 
 	tokens, err := database.Rdb.LRange(ctx, key, 0, -1).Result()
 	if err != nil {
@@ -263,4 +269,16 @@ func (s *Service) RefreshToken(refreshToken string) (string, string, error) {
 
 func (s *Service) InvalidateRefreshToken(tokenString string) error {
 	return InvalidateToken(tokenString, RefreshTokenTTL)
+}
+
+func verifyEmailKey(token string) string {
+	return fmt.Sprintf("verify_email:%s", token)
+}
+
+func resetPasswordKey(token string) string {
+	return fmt.Sprintf("reset_password:%s", token)
+}
+
+func sessionsKey(userID string) string {
+	return fmt.Sprintf("sessions:%s", userID)
 }
