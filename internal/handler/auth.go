@@ -4,7 +4,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/auth"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/dto"
-	"github.com/sudo-hassan-zahid/go-api-server/utils"
 )
 
 type AuthHandler struct {
@@ -29,12 +28,11 @@ func NewAuthHandler(s *auth.Service) *AuthHandler {
 // @Failure      500 {object} map[string]string "Internal server error"
 // @Router       /auth/signup [post]
 func (h *AuthHandler) CreateUser(c *fiber.Ctx) error {
-	var req dto.CreateUserRequest
-	if err := c.BodyParser(&req); err != nil {
+	req, ok, err := bindAndValidate[dto.CreateUserRequest](c)
+	if err != nil {
 		return err
 	}
-
-	if ok := utils.ValidateStruct(c, &req); !ok {
+	if !ok {
 		return nil
 	}
 
@@ -99,12 +97,11 @@ func (h *AuthHandler) VerifyEmail(c *fiber.Ctx) error {
 // @Failure      500 {object} map[string]string "Internal server error"
 // @Router       /auth/login [post]
 func (h *AuthHandler) LoginUser(c *fiber.Ctx) error {
-	var req dto.LoginUserRequest
-	if err := c.BodyParser(&req); err != nil {
+	req, ok, err := bindAndValidate[dto.LoginUserRequest](c)
+	if err != nil {
 		return err
 	}
-
-	if ok := utils.ValidateStruct(c, &req); !ok {
+	if !ok {
 		return nil
 	}
 
@@ -136,12 +133,11 @@ func (h *AuthHandler) LoginUser(c *fiber.Ctx) error {
 // @Failure      500 {object} map[string]string "Internal server error"
 // @Router       /auth/refresh [post]
 func (h *AuthHandler) RefreshToken(c *fiber.Ctx) error {
-	var req dto.RefreshTokenRequest
-	if err := c.BodyParser(&req); err != nil {
+	req, ok, err := bindAndValidate[dto.RefreshTokenRequest](c)
+	if err != nil {
 		return err
 	}
-
-	if ok := utils.ValidateStruct(c, &req); !ok {
+	if !ok {
 		return nil
 	}
 
@@ -168,12 +164,11 @@ func (h *AuthHandler) RefreshToken(c *fiber.Ctx) error {
 // @Failure      500 {object} map[string]string "Internal server error"
 // @Router       /auth/forgot-password [post]
 func (h *AuthHandler) ForgotPassword(c *fiber.Ctx) error {
-	var req dto.ForgotPasswordRequest
-	if err := c.BodyParser(&req); err != nil {
+	req, ok, err := bindAndValidate[dto.ForgotPasswordRequest](c)
+	if err != nil {
 		return err
 	}
-
-	if ok := utils.ValidateStruct(c, &req); !ok {
+	if !ok {
 		return nil
 	}
 
@@ -196,12 +191,11 @@ func (h *AuthHandler) ForgotPassword(c *fiber.Ctx) error {
 // @Failure      500 {object} map[string]string "Internal server error"
 // @Router       /auth/reset-password [post]
 func (h *AuthHandler) ResetPassword(c *fiber.Ctx) error {
-	var req dto.ResetPasswordRequest
-	if err := c.BodyParser(&req); err != nil {
+	req, ok, err := bindAndValidate[dto.ResetPasswordRequest](c)
+	if err != nil {
 		return err
 	}
-
-	if ok := utils.ValidateStruct(c, &req); !ok {
+	if !ok {
 		return nil
 	}
 

@@ -1,10 +1,7 @@
 package handler
 
 import (
-	"strings"
-
 	"github.com/gofiber/fiber/v2"
-	"github.com/google/uuid"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/dto"
 	"github.com/sudo-hassan-zahid/go-api-server/internal/service"
 )
@@ -51,12 +48,9 @@ func (h *UserHandler) GetAllUsers(c *fiber.Ctx) error {
 // @Failure      500 {object} map[string]string "Internal server error"
 // @Router       /users/{id} [get]
 func (h *UserHandler) GetUserByID(c *fiber.Ctx) error {
-	idParam := c.Params("id")
-	id, err := uuid.Parse(idParam)
+	id, err := uuidParam(c, "id")
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "invalid user id format",
-		})
+		return err
 	}
 
 	user, err := h.service.GetUserByID(id)
@@ -82,18 +76,9 @@ func (h *UserHandler) GetUserByID(c *fiber.Ctx) error {
 // @Failure      500 {object} map[string]string "Internal server error"
 // @Router       /users/{id} [patch]
 func (h *UserHandler) UpdateUser(c *fiber.Ctx) error {
-	userID := strings.TrimSpace(c.Params("id"))
-	if userID == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "user id is required",
-		})
-	}
-
-	id, err := uuid.Parse(userID)
+	id, err := uuidParam(c, "id")
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "invalid user id format",
-		})
+		return err
 	}
 
 	_, err = h.service.GetUserByID(id)
@@ -101,9 +86,12 @@ func (h *UserHandler) UpdateUser(c *fiber.Ctx) error {
 		return err
 	}
 
-	var updateUser dto.UpdateUserRequest
-	if err := c.BodyParser(&updateUser); err != nil {
+	updateUser, ok, err := bindAndValidate[dto.UpdateUserRequest](c)
+	if err != nil {
 		return err
+	}
+	if !ok {
+		return nil
 	}
 
 	err = h.service.UpdateUser(id, updateUser)
@@ -131,18 +119,9 @@ func (h *UserHandler) UpdateUser(c *fiber.Ctx) error {
 // @Failure      500 {object} map[string]string "Internal server error"
 // @Router       /users/{id} [delete]
 func (h *UserHandler) DeleteUser(c *fiber.Ctx) error {
-	userID := strings.TrimSpace(c.Params("id"))
-	if userID == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "user id is required",
-		})
-	}
-
-	id, err := uuid.Parse(userID)
+	id, err := uuidParam(c, "id")
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "invalid user id format",
-		})
+		return err
 	}
 
 	_, err = h.service.GetUserByID(id)
