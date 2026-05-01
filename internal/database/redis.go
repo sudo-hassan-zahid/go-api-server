@@ -14,9 +14,17 @@ var Rdb *redis.Client
 
 func ConnectRedis(cfg config.RedisConfig) error {
 	Rdb = redis.NewClient(&redis.Options{
-		Addr:     fmt.Sprintf("%s:%s", cfg.Host, cfg.Port),
-		Password: cfg.Password,
-		DB:       cfg.DB,
+		Addr:            fmt.Sprintf("%s:%s", cfg.Host, cfg.Port),
+		Password:        cfg.Password,
+		DB:              cfg.DB,
+		DialTimeout:     5 * time.Second,
+		ReadTimeout:     3 * time.Second,
+		WriteTimeout:    3 * time.Second,
+		PoolTimeout:     4 * time.Second,
+		MinIdleConns:    2,
+		MaxRetries:      3,
+		MinRetryBackoff: 100 * time.Millisecond,
+		MaxRetryBackoff: 1 * time.Second,
 	})
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -24,6 +32,8 @@ func ConnectRedis(cfg config.RedisConfig) error {
 
 	pong, err := Rdb.Ping(ctx).Result()
 	if err != nil {
+		_ = Rdb.Close()
+		Rdb = nil
 		return fmt.Errorf("failed to connect to redis: %w", err)
 	}
 
